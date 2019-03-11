@@ -40,6 +40,7 @@ public abstract class RowSourceConnector extends SourceConnector {
   /**
    * Return the configs for source task.
    *
+   * @param maxTasks number of tasks for this connector
    * @return a seq from configs
    */
   protected abstract List<TaskConfig> _taskConfigs(int maxTasks);

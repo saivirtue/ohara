@@ -27,8 +27,8 @@ public class CheckedExceptionUtil {
    * @see <a
    *     href="https://github.com/google/guava/wiki/Why-we-deprecated-Throwables.propagate">propaget</a>
    * @param cew a lambda throws Exceptions
+   * @param <T> exception type
    * @return anything
-   * @throws RuntimeException
    */
   public static <T> T wrap(CheckedExceptionWrapperReturn<T> cew) throws RuntimeException {
     try {
@@ -50,7 +50,6 @@ public class CheckedExceptionUtil {
     }
   }
 
-  /** wrap both checked and runtime exception in RuntimeException */
   public static <T> T wrapRuntime(CheckedExceptionWrapperReturn<T> cew) throws RuntimeException {
     try {
       return cew.excute();
@@ -67,12 +66,6 @@ public class CheckedExceptionUtil {
     }
   }
 
-  /**
-   * handler 1-1 mapping checked exception if it is not mapping to anything, mapping to
-   * OharaException
-   *
-   * <p>"last handler will be fiest mapping choose"
-   */
   public static <T> T wrap(CheckedExceptionWrapperReturn<T> cew, ExceptionHandler... handlers)
       throws RuntimeException {
     try {

@@ -26,7 +26,6 @@ public class ExceptionHandler {
 
   private final List<ExceptionPair> excepList;
 
-  /** get mapping from the last to the first */
   public static OharaException handle(Exception e, ExceptionHandler... handlers) {
     Function<Exception, OharaException> f = DEFAULT_EXCEPTION;
     for (int i = handlers.length - 1; i >= 0; i--) {

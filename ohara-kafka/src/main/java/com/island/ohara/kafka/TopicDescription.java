@@ -32,8 +32,7 @@ public class TopicDescription {
   private final List<TopicOption> options;
   private final boolean internal;
 
-  /** TODO: we ought not to expose it but ohara-configurator has a fake one...by chia */
-  public TopicDescription(
+  TopicDescription(
       String name,
       int numberOfPartitions,
       short numberOfReplications,

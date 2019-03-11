@@ -30,9 +30,7 @@ public class TopicOption {
   private final boolean sensitive;
   private final boolean readOnly;
 
-  /** TODO: we ought not to expose it but ohara-configurator has a fake one...by chia */
-  public TopicOption(
-      String key, String value, boolean isDefault, boolean sensitive, boolean readOnly) {
+  TopicOption(String key, String value, boolean isDefault, boolean sensitive, boolean readOnly) {
     this.key = key;
     this.value = value;
     this.isDefault = isDefault;

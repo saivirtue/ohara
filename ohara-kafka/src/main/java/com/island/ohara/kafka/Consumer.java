@@ -43,10 +43,10 @@ import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.serialization.Deserializer;
 
 /**
- * a simple scala wrap from kafka consumer.
+ * A wrap of kafka consumer.
  *
- * @param <K></K> key type
- * @param <V></V> value type
+ * @param <K> key type
+ * @param <V> value type
  */
 public interface Consumer<K, V> extends Releasable {
 
@@ -77,12 +77,16 @@ public interface Consumer<K, V> extends Releasable {
       Duration timeout, int expectedSize, Function<List<Record<K, V>>, List<Record<K, V>>> filter) {
     return poll(timeout, expectedSize, () -> false, filter);
   }
+
   /**
    * It accept another condition - expected size from records. Somethins it is helpful if you
    * already know the number from records which should be returned.
    *
    * @param timeout timeout
    * @param expectedSize the number from records should be returned
+   * @param stop supply a single to stop the internal loop
+   * @param filter data filter
+   * @return records
    */
   default List<Record<K, V>> poll(
       Duration timeout,

@@ -27,7 +27,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
  *
  * <pre>
  * "Field:  Object o1; Object o2;"
- * "Unnormally , you compare o1.equal(o2) && o2.equal(o1)"
+ * "Unnormally , you compare o1.equal(o2) and o2.equal(o1)"
  * </pre>
  *
  * <p>You need to custom the equals by self !!!!!!!!!!!!!!!!!!

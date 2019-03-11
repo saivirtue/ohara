@@ -28,7 +28,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * Store will use the reflection to create the object. The dynamical call to inner/anonymous class
  * is fraught with risks.
  *
- * @tparam T object type
+ * @param <T> data type
  */
 public interface Serializer<T> {
 

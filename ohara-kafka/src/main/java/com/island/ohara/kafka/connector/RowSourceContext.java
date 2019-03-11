@@ -29,6 +29,7 @@ public interface RowSourceContext {
    * gets it from the backing store, which may require some network round trips.
    *
    * @param partition object uniquely identifying the partition from data
+   * @param <T> type of offset value
    * @return object uniquely identifying the offset in the partition from data
    */
   <T> Map<String, Object> offset(Map<String, T> partition);
@@ -45,6 +46,7 @@ public interface RowSourceContext {
    * unavailable.
    *
    * @param partitions set from identifiers for partitions from data
+   * @param <T> type of offset value
    * @return a map from partition identifiers to decoded offsets
    */
   <T> Map<Map<String, T>, Map<String, Object>> offset(List<Map<String, T>> partitions);

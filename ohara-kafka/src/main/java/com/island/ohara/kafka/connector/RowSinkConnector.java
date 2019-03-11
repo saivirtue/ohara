@@ -52,7 +52,8 @@ public abstract class RowSinkConnector extends SinkConnector {
    * Return the configs for source task. NOTED: It is illegal to assign different topics to
    * RowSinkTask
    *
-   * @return a seq from configs
+   * @param maxTasks number of tasks for this connector
+   * @return the configs for each tasks
    */
   protected abstract List<TaskConfig> _taskConfigs(int maxTasks);
 

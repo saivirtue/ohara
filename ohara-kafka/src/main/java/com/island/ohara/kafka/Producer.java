@@ -262,7 +262,12 @@ public interface Producer<K, V> extends Releasable {
       return this;
     }
 
-    /** send the record to brokers with async future */
+    /**
+     * start to send the data in background. Noted: you should check the returned future to handle
+     * the exception or result
+     *
+     * @return an async thread processing the request
+     */
     public Future<RecordMetadata> send(String topic) {
 
       CompletableFuture<RecordMetadata> completableFuture = new CompletableFuture<>();
@@ -302,11 +307,7 @@ public interface Producer<K, V> extends Releasable {
     void onSuccess(T t);
   }
 
-  /**
-   * wrap from kafka RecordMetadata;
-   *
-   * @see org.apache.kafka.clients.producer.RecordMetadata;
-   */
+  /** wrap from kafka RecordMetadata; */
   class RecordMetadata {
     private final String topic;
     private final int partition;

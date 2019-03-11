@@ -20,6 +20,8 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.island.ohara.common.annotations.Optional;
 import org.apache.kafka.common.config.TopicConfig;
 
 /**
@@ -32,6 +34,11 @@ public abstract class TopicCreator {
   protected Map<String, String> options = new HashMap<>();
   protected Duration timeout = Duration.ofSeconds(10);
 
+  TopicCreator() {
+    // do nothing
+  }
+
+  @Optional("default value is 1")
   public TopicCreator numberOfPartitions(int numberOfPartitions) {
     this.numberOfPartitions = numberOfPartitions;
     return this;

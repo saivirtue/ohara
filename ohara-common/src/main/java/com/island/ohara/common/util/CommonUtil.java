@@ -203,7 +203,6 @@ public final class CommonUtil {
     } else return false;
   }
 
-  /** Set elemnts normally implements equals */
   public static <E1> boolean equals(Set<E1> s1, Object o) {
     if (s1 == o) return true;
     if (!(o instanceof Set)) return false;
@@ -247,12 +246,6 @@ public final class CommonUtil {
     return true;
   }
 
-  /**
-   * Map equals
-   *
-   * <p>equals method do not compare all elements only first one to case It will throw
-   * ClassCastException when Map.entry<K,V> has values List and String
-   */
   public static <K, V> boolean equals(Map<K, V> m1, Object o) {
 
     if (m1 == o) return true;
@@ -298,14 +291,6 @@ public final class CommonUtil {
     return (!e1.hasNext()) && (!e2.hasNext());
   }
 
-  /**
-   * List equals
-   *
-   * <p>equals method do not compare all elements only first one to case It will throw
-   * ClassCastException when List<Object> has elements List and String
-   *
-   * <p>
-   */
   public static <E1> boolean equals(List<E1> l1, Object o) {
     if (l1 == o) return true;
     if (!(o instanceof List)) return false;

@@ -72,6 +72,7 @@ public final class Column extends Data implements Serializable {
    * Column object serializes to String It uses "," to join all fields and concat Columns.
    *
    * @param schema Column list
+   * @return a serialized string
    */
   public static String fromColumns(List<Column> schema) {
 

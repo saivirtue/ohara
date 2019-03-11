@@ -36,9 +36,7 @@ import org.apache.ftpserver.usermanager.impl.BaseUser;
 import org.apache.ftpserver.usermanager.impl.WritePermission;
 
 /**
- * a simple embedded ftp server providing 1 writable user. The home folder is based on
- * java.io.tmpdir with prefix - ftp 1) port -> a random port 2) hostname -> "localhost" 3) user -> a
- * writable account 4) password -> a writable account
+ * a simple embedded ftp server providing 1 writable user.
  *
  * <p>all resources will be released by FtpServer#close(). For example, all data in home folder will
  * be deleted

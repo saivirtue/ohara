@@ -110,10 +110,6 @@ public abstract class RowSinkTask extends SinkTask {
     return offsets;
   };
 
-  /**
-   * @return RowSinkContext is provided to RowSinkTask to allow them to interact with the underlying
-   *     runtime.
-   */
   protected RowSinkContext rowContext;
   // -------------------------------------------------[WRAPPED]-------------------------------------------------//
 
