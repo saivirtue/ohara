@@ -16,6 +16,17 @@
 
 apply from: "$rootDir/gradle/dependencies.gradle"
 
+apply plugin: 'com.novoda.bintray-release'
+
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.novoda:bintray-release:0.9'
+  }
+}
+
 dependencies {
   implementation project(':ohara-common')
   implementation project(':ohara-client')
@@ -35,13 +46,13 @@ dependencies {
    *
    * Solve running Kafka Connect mini cluster failed. OHARA-103
    */
-  implementation (libs.hadoopCommon) {
+  implementation(libs.hadoopCommon) {
     exclude group: 'com.sun.jersey', module: 'jersey-core'
     exclude group: 'com.sun.jersey', module: 'jersey-json'
     exclude group: 'com.sun.jersey', module: 'jersey-servlet'
     exclude group: 'com.sun.jersey', module: 'jersey-server'
   }
-  implementation (libs.hadoopHDFS) {
+  implementation(libs.hadoopHDFS) {
     exclude group: 'com.sun.jersey', module: 'jersey-core'
     exclude group: 'com.sun.jersey', module: 'jersey-json'
     exclude group: 'com.sun.jersey', module: 'jersey-servlet'
@@ -61,33 +72,43 @@ task runFtp(type: JavaExec, dependsOn: 'classes') {
   main = "com.island.ohara.testing.service.FtpServer"
 
   def inputs = []
-  if(project.hasProperty('homeFolder')) {
+  if (project.hasProperty('homeFolder')) {
     inputs << "--homeFolder"
     inputs << project.getProperty("homeFolder")
   }
-  if(project.hasProperty('hostname')) {
+  if (project.hasProperty('hostname')) {
     inputs << "--hostname"
     inputs << project.getProperty("hostname")
   }
-  if(project.hasProperty('user')) {
+  if (project.hasProperty('user')) {
     inputs << "--user"
     inputs << project.getProperty("user")
   }
-  if(project.hasProperty('password')) {
+  if (project.hasProperty('password')) {
     inputs << "--password"
     inputs << project.getProperty("password")
   }
-  if(project.hasProperty('controlPort')) {
+  if (project.hasProperty('controlPort')) {
     inputs << "--controlPort"
     inputs << project.getProperty("controlPort")
   }
-  if(project.hasProperty('dataPorts')) {
+  if (project.hasProperty('dataPorts')) {
     inputs << "--dataPorts"
     inputs << project.getProperty("dataPorts")
   }
-  if(project.hasProperty('ttl')) {
+  if (project.hasProperty('ttl')) {
     inputs << "--ttl"
     inputs << project.getProperty("ttl")
   }
   args = inputs
+}
+
+publish {
+  userOrg = property("userOrg")
+  repoName = property("repoName")
+  groupId = property("group")
+  artifactId = 'ohara-testing-util'
+  publishVersion = project.version
+  desc = property("desc")
+  website = property("website")
 }

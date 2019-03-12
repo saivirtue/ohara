@@ -16,6 +16,17 @@
 
 apply from: "$rootDir/gradle/dependencies.gradle"
 
+apply plugin: 'com.novoda.bintray-release'
+
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.novoda:bintray-release:0.9'
+  }
+}
+
 dependencies {
   implementation project(':ohara-common')
   implementation libs.commonsNet
@@ -33,4 +44,14 @@ dependencies {
   testImplementation libs.scalatest
   testImplementation libs.mockito
   testImplementation libs.junit
+}
+
+publish {
+  userOrg = property("userOrg")
+  repoName = property("repoName")
+  groupId = property("group")
+  artifactId = 'ohara-client'
+  publishVersion = project.version
+  desc = property("desc")
+  website = property("website")
 }

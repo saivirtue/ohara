@@ -16,6 +16,16 @@
 
 apply from: "$rootDir/gradle/dependencies.gradle"
 
+apply plugin: 'com.novoda.bintray-release'
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.novoda:bintray-release:0.9'
+  }
+}
+
 dependencies {
   implementation project(':ohara-agent')
   implementation project(':ohara-common')
@@ -27,13 +37,13 @@ dependencies {
    *
    * Solve running Kafka Connect mini cluster failed. OHARA-103
    */
-  implementation (libs.hadoopCommon) {
+  implementation(libs.hadoopCommon) {
     exclude group: 'com.sun.jersey', module: 'jersey-core'
     exclude group: 'com.sun.jersey', module: 'jersey-json'
     exclude group: 'com.sun.jersey', module: 'jersey-servlet'
     exclude group: 'com.sun.jersey', module: 'jersey-server'
   }
-  implementation (libs.hadoopHDFS) {
+  implementation(libs.hadoopHDFS) {
     exclude group: 'com.sun.jersey', module: 'jersey-core'
     exclude group: 'com.sun.jersey', module: 'jersey-json'
     exclude group: 'com.sun.jersey', module: 'jersey-servlet'
@@ -61,24 +71,34 @@ dependencies {
  */
 task runConfigurator(type: JavaExec, dependsOn: 'classes') {
   description 'run a configurator. You can use -Phost and -Pport to change the address and port of configurator.' +
-          'Also, you can assign -Pbrokers, -Pworkers, -Ptopic, -Ppartitions, and -Preplications to run the configurator on truly kafka'
+    'Also, you can assign -Pbrokers, -Pworkers, -Ptopic, -Ppartitions, and -Preplications to run the configurator on truly kafka'
 
   classpath = sourceSets.main.runtimeClasspath
   main = "com.island.ohara.configurator.Configurator"
 
   def inputs = []
-  if(project.hasProperty('hostname')) {
+  if (project.hasProperty('hostname')) {
     inputs << "--hostname"
     inputs << project.getProperty("hostname")
   }
-  if(project.hasProperty('port')) {
+  if (project.hasProperty('port')) {
     inputs << "--port"
     inputs << project.getProperty("port")
   }
-  if(project.hasProperty('node')) {
+  if (project.hasProperty('node')) {
     inputs << "--node"
     inputs << project.getProperty('node')
   }
   args = inputs
+}
+
+publish {
+  userOrg = property("userOrg")
+  repoName = property("repoName")
+  groupId = property("group")
+  artifactId = 'ohara-configurator'
+  publishVersion = project.version
+  desc = property("desc")
+  website = property("website")
 }
 

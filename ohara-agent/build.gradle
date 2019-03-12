@@ -16,6 +16,17 @@
 
 apply from: "$rootDir/gradle/dependencies.gradle"
 
+apply plugin: 'com.novoda.bintray-release'
+
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.novoda:bintray-release:0.9'
+  }
+}
+
 dependencies {
   implementation project(":ohara-common")
   implementation project(":ohara-kafka")
@@ -43,4 +54,13 @@ task runAgent(type: JavaExec, dependsOn: 'classes') {
   classpath = sourceSets.main.runtimeClasspath
   main = "com.island.ohara.agent.Agent"
   args = Arrays.asList(port)
+}
+publish {
+  userOrg = property("userOrg")
+  repoName = property("repoName")
+  groupId = property("group")
+  artifactId = 'ohara-client'
+  publishVersion = project.version
+  desc = property("desc")
+  website = property("website")
 }

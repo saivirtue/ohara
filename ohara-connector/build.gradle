@@ -16,6 +16,17 @@
 
 apply from: "$rootDir/gradle/dependencies.gradle"
 
+apply plugin: 'com.novoda.bintray-release'
+
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.novoda:bintray-release:0.9'
+  }
+}
+
 // TODO: Why we set the time zone in testing??? We can get the system timezone through Calendar.getInstance().getTimeZone... by chia
 test.systemProperty("user.timezone", "Asia/Taipei")
 
@@ -34,13 +45,13 @@ dependencies {
    *
    * Solve running Kafka Connect mini cluster failed. OHARA-103
    */
-  implementation (libs.hadoopCommon) {
+  implementation(libs.hadoopCommon) {
     exclude group: 'com.sun.jersey', module: 'jersey-core'
     exclude group: 'com.sun.jersey', module: 'jersey-json'
     exclude group: 'com.sun.jersey', module: 'jersey-servlet'
     exclude group: 'com.sun.jersey', module: 'jersey-server'
   }
-  implementation (libs.hadoopHDFS) {
+  implementation(libs.hadoopHDFS) {
     exclude group: 'com.sun.jersey', module: 'jersey-core'
     exclude group: 'com.sun.jersey', module: 'jersey-json'
     exclude group: 'com.sun.jersey', module: 'jersey-servlet'
@@ -52,4 +63,14 @@ dependencies {
   testImplementation libs.scalatest
   testImplementation libs.mockito
   testImplementation libs.junit
+}
+
+publish {
+  userOrg = property("userOrg")
+  repoName = property("repoName")
+  groupId = property("group")
+  artifactId = 'ohara-connector'
+  publishVersion = project.version
+  desc = property("desc")
+  website = property("website")
 }

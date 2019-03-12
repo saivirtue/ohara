@@ -16,18 +16,34 @@
 
 apply from: "$rootDir/gradle/dependencies.gradle"
 
+apply plugin: 'com.novoda.bintray-release'
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.novoda:bintray-release:0.9'
+  }
+}
+
 dependencies {
-    implementation libs.scala
-    implementation libs.scalaLogging
-    implementation libs.slf4jApi
-    implementation libs.slf4jlog4j
+  implementation libs.scala
+  implementation libs.scalaLogging
+  implementation libs.slf4jApi
+  implementation libs.slf4jlog4j
+  implementation libs.akkaStream
+  implementation libs.akkaHttp
+  testImplementation libs.scalatest
+  testImplementation libs.mockito
+  testImplementation libs.junit
+}
 
-    implementation libs.akkaStream
-    implementation libs.akkaHttp
-
-
-
-    testImplementation libs.scalatest
-    testImplementation libs.mockito
-    testImplementation libs.junit
+publish {
+  userOrg = property("userOrg")
+  repoName = property("repoName")
+  groupId = property("group")
+  artifactId = 'ohara-shabondi'
+  publishVersion = project.version
+  desc = property("desc")
+  website = property("website")
 }

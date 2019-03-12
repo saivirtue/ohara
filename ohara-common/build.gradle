@@ -16,6 +16,17 @@
 
 apply from: "$rootDir/gradle/dependencies.gradle"
 
+apply plugin: 'com.novoda.bintray-release'
+
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.novoda:bintray-release:0.9'
+  }
+}
+
 dependencies {
   implementation libs.commonsNet
   implementation libs.commonsLang
@@ -106,4 +117,14 @@ public final class VersionUtil {
  */
 tasks.matching { it.name != 'initializer' && it.name == "compileJava"}.all { Task task ->
   task.dependsOn initializer
+}
+
+publish {
+  userOrg = property("userOrg")
+  repoName = property("repoName")
+  groupId = property("group")
+  artifactId = 'ohara-common'
+  publishVersion = project.version
+  desc = property("desc")
+  website = property("website")
 }

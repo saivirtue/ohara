@@ -16,6 +16,17 @@
 
 apply from: "$rootDir/gradle/dependencies.gradle"
 
+apply plugin: 'com.novoda.bintray-release'
+
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.novoda:bintray-release:0.9'
+  }
+}
+
 dependencies {
   implementation project(':ohara-common')
   implementation project(':ohara-client')
@@ -33,7 +44,7 @@ dependencies {
    *
    * Solve running Kafka Connect mini cluster failed. OHARA-103
    */
-  testImplementation (libs.hadoopHDFS) {
+  testImplementation(libs.hadoopHDFS) {
     exclude group: 'com.sun.jersey', module: 'jersey-core'
     exclude group: 'com.sun.jersey', module: 'jersey-json'
     exclude group: 'com.sun.jersey', module: 'jersey-servlet'
@@ -45,5 +56,15 @@ dependencies {
   testImplementation libs.scalatest
   testImplementation libs.mockito
   testImplementation libs.junit
+}
+
+publish {
+  userOrg = property("userOrg")
+  repoName = property("repoName")
+  groupId = property("group")
+  artifactId = 'ohara-kafka'
+  publishVersion = project.version
+  desc = property("desc")
+  website = property("website")
 }
 
