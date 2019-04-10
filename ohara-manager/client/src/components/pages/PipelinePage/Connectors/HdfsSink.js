@@ -132,7 +132,7 @@ class HdfsSink extends React.Component {
     const { fileEncodings } = this.state;
 
     if (result) {
-      const { name, state, topics: prevTopics } = result;
+      const { name, state, topics: prevTopics, configs } = result;
       const {
         writePath = '',
         needHeader = false,
@@ -141,7 +141,7 @@ class HdfsSink extends React.Component {
         'flush.line.count': flushLineCount = '',
         'rotate.interval.ms': rotateInterval = '',
         'data.econde': currFileEncoding = fileEncodings[0],
-      } = result.settings.configs;
+      } = configs;
 
       const { topics: readTopics } = this.props;
 

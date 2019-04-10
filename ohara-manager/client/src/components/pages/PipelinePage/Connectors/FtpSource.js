@@ -151,7 +151,13 @@ class FtpSource extends React.Component {
     const { fileEncodings, tasks } = this.state;
 
     if (result) {
-      const { schema = '[]', name = '', state, topics: prevTopics } = result;
+      const {
+        schema = '[]',
+        name = '',
+        state,
+        topics: prevTopics,
+        configs,
+      } = result;
       const {
         'ftp.user.name': username = '',
         'ftp.user.password': password = '',
@@ -162,7 +168,7 @@ class FtpSource extends React.Component {
         'ftp.error.folder': errorFolder = '',
         'ftp.encode': currFileEncoding = fileEncodings[0],
         currTask = tasks[0],
-      } = result.settings.configs;
+      } = configs;
 
       const { topics: writeTopics } = this.props;
 
