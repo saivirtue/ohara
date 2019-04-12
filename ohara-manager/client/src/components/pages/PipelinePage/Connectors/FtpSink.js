@@ -170,13 +170,7 @@ class FtpSink extends React.Component {
     const { fileEncodings, tasks } = this.state;
 
     if (result) {
-      const {
-        schema = '[]',
-        name = '',
-        state,
-        topics: prevTopics,
-        configs,
-      } = result;
+      const { schema = '[]', name = '', state, topics: prevTopics } = result;
       const {
         'ftp.hostname': host = '',
         'ftp.port': port = '',
@@ -186,7 +180,7 @@ class FtpSink extends React.Component {
         'ftp.encode': currFileEncoding = fileEncodings[0],
         'ftp.needHeader': needHeader = false,
         currTask = tasks[0],
-      } = configs;
+      } = result.settings.configs;
 
       const { topics: readTopics } = this.props;
 
