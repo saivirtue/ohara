@@ -80,8 +80,8 @@ class TestConnectorApi extends SmallTest with Matchers {
                                                |  "topics": ${JsArray(topicNames.map(v => JsString(v)).toVector)
                                                        .toString()},
                                                |  "numberOfTasks": ${JsNumber(numberOfTasks).toString()},
-                                               |  "configs": ${JsObject(configs.map { case (k, v) => k -> JsString(v) })
-                                                       .toString()},
+                                               |  "settings": ${JsObject(
+                                                       configs.map { case (k, v) => k -> JsString(v) }).toString()},
                                                   "$anotherKey": "$anotherValue"
                                                |}
                                             """.stripMargin.parseJson)
@@ -237,57 +237,5 @@ class TestConnectorApi extends SmallTest with Matchers {
     column.name() shouldBe "abc"
     column.newName() shouldBe "ccc"
     column.dataType().name() shouldBe "STRING"
-  }
-
-  @Test
-  def parseStaleConfigs(): Unit = {
-    val creationRequest = ConnectorApi.CONNECTOR_CREATION_REQUEST_JSON_FORMAT.read(s"""
-                                                                                      | {
-                                                                                      |  "name": "ftp source",
-                                                                                      |  "schema": [
-                                                                                      |    {
-                                                                                      |      "name": "col1",
-                                                                                      |      "newName": "col1",
-                                                                                      |      "dataType": "STRING",
-                                                                                      |      "order": 1
-                                                                                      |    },
-                                                                                      |    {
-                                                                                      |      "name": "col2",
-                                                                                      |      "newName": "col2",
-                                                                                      |      "dataType": "STRING",
-                                                                                      |      "order": 2
-                                                                                      |    },
-                                                                                      |    {
-                                                                                      |      "name": "col3",
-                                                                                      |      "newName": "col3",
-                                                                                      |      "dataType": "STRING",
-                                                                                      |      "order": 3
-                                                                                      |    }
-                                                                                      |  ],
-                                                                                      |  "className": "com.island.ohara.connector.ftp.FtpSource",
-                                                                                      |  "topics": [
-                                                                                      |    "47e45b56-6cee-4bc5-83e4-62e872552880"
-                                                                                      |  ],
-                                                                                      |  "numberOfTasks": 1,
-                                                                                      |  "configs": {
-                                                                                      |    "ftp.input.folder": "/demo_folder/input",
-                                                                                      |    "ftp.completed.folder": "/demo_folder/complete",
-                                                                                      |    "ftp.error.folder": "/demo_folder/error",
-                                                                                      |    "ftp.encode": "UTF-8",
-                                                                                      |    "ftp.hostname": "10.2.0.28",
-                                                                                      |    "ftp.port": "21",
-                                                                                      |    "ftp.user.name": "ohara",
-                                                                                      |    "ftp.user.password": "island123",
-                                                                                      |    "currTask": "1"
-                                                                                      |  }
-                                                                                      |}
-                                                                                      |     """.stripMargin.parseJson)
-
-    creationRequest.settings("ftp.input.folder") shouldBe JsString("/demo_folder/input")
-    creationRequest.settings("ftp.completed.folder") shouldBe JsString("/demo_folder/complete")
-    creationRequest.settings("ftp.error.folder") shouldBe JsString("/demo_folder/error")
-    creationRequest.settings("ftp.encode") shouldBe JsString("UTF-8")
-    creationRequest.settings("ftp.hostname") shouldBe JsString("10.2.0.28")
-    creationRequest.settings("ftp.port") shouldBe JsString("21")
   }
 }

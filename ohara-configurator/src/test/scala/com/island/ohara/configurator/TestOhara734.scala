@@ -70,7 +70,7 @@ class TestOhara734 extends SmallTest with Matchers {
                                                             |  "className":"com.island.ohara.connector.perf.PerfSource",
                                                             |  "topics":["59e9010c-fd9c-4a41-918a-dacc9b84aa2b"],
                                                             |  "numberOfTasks":1,
-                                                            |  "configs":{
+                                                            |  "settings":{
                                                             |    "perf.batch":"1",
                                                             |    "perf.frequence":"2 seconds"
                                                             |  },
@@ -103,7 +103,7 @@ class TestOhara734 extends SmallTest with Matchers {
                                                          |  "className":"com.island.ohara.connector.perf.PerfSource",
                                                          |  "topics":["59e9010c-fd9c-4a41-918a-dacc9b84aa2b"],
                                                          |  "numberOfTasks":1,
-                                                         |  "configs":{
+                                                         |  "settings":{
                                                          |    "perf.batch":"1",
                                                          |    "perf.frequence":"2 seconds"
                                                          |  },
@@ -134,7 +134,7 @@ class TestOhara734 extends SmallTest with Matchers {
                                                                |  "className":"com.island.ohara.connector.perf.PerfSource",
                                                                |  "topics":["59e9010c-fd9c-4a41-918a-dacc9b84aa2b"],
                                                                |  "numberOfTasks":1,
-                                                               |  "configs":{
+                                                               |  "settings":{
                                                                |    "perf.batch":"1",
                                                                |    "perf.frequence":"2 seconds"
                                                                |  },
@@ -167,7 +167,7 @@ class TestOhara734 extends SmallTest with Matchers {
                                                        |  "className":"com.island.ohara.connector.perf.PerfSource",
                                                        |  "topics":["59e9010c-fd9c-4a41-918a-dacc9b84aa2b"],
                                                        |  "numberOfTasks":1,
-                                                       |  "configs":{
+                                                       |  "settings":{
                                                        |    "perf.batch":"1",
                                                        |    "perf.frequence":"2 seconds"
                                                        |  },

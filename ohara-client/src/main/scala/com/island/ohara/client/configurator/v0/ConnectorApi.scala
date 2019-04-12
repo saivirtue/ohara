@@ -149,13 +149,13 @@ object ConnectorApi {
         */
       override def read(json: JsValue): ConnectorCreationRequest = {
         val fields: Map[String, JsValue] = noJsNull(json.asJsObject.fields)
-        val setting: collection.mutable.Map[String, JsValue] = collection.mutable.Map(fields.toSeq: _*)
+        val setting = collection.mutable.Map(fields.toSeq: _*)
         setting.remove("className")
         setting.remove("schema")
         setting.remove("topics")
         setting.remove("numberOfTasks")
         setting.remove("workerClusterName")
-        setting.remove("configs")
+        setting.remove("settings")
         val request = ConnectorCreationRequest(
           className = fields.get("className").map(_.asInstanceOf[JsString].value),
           columns = fields
@@ -168,7 +168,7 @@ object ConnectorApi {
             .getOrElse(Vector.empty),
           numberOfTasks = fields.get("numberOfTasks").map(_.asInstanceOf[JsNumber].value.toInt),
           settings = fields
-            .get("configs")
+            .get("settings")
             .map(_.asInstanceOf[JsObject].fields.map {
               case (k, v) => k -> v.asInstanceOf[JsString].value
             })
