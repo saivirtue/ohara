@@ -53,13 +53,14 @@ Cypress.Commands.add('createWorker', () => {
       clientPort: utils.makeRandomPort(),
       jmxPort: utils.makeRandomPort(),
       brokerClusterName: broker.name,
-      jars: [],
+      jarKeys: [],
       groupId: groupId,
       configTopicName: configTopicName,
       offsetTopicName: offsetTopicName,
       statusTopicName: statusTopicName,
       nodeNames: [nodeName],
     });
+    cy.request('PUT', `api/workers/${workerName}/start`);
   });
 
   let count = 0;
@@ -67,13 +68,9 @@ Cypress.Commands.add('createWorker', () => {
   // Make a request to configurator see if worker cluster is ready for use
   const req = endPoint => {
     cy.request('GET', endPoint).then(res => {
-      const connectors = res.body[0].connectors;
-
       // When connectors field has the right connector info
       // this means that everything is ready to be tested
-      const workerIsReady =
-        res.body.some(worker => worker.name === workerName) &&
-        !Cypress._.isEmpty(connectors);
+      const workerIsReady = res.body.state === 'RUNNING';
 
       if (workerIsReady || count > max) return;
 
@@ -84,7 +81,7 @@ Cypress.Commands.add('createWorker', () => {
     });
   };
 
-  const endPoint = `api/workers`;
+  const endPoint = `api/workers/${workerName}`;
   cy.request('GET', endPoint).then(() => req(endPoint));
 });
 
@@ -143,6 +140,30 @@ Cypress.Commands.add('deleteAllWorkers', () => {
       if (targetWorkers.length > 0) {
         targetWorkers.forEach(targetWorker => {
           const { name } = targetWorker;
+
+          cy.request('PUT', `api/workers/${name}/stop`);
+
+          let count = 0;
+          const max = 10;
+          // Make a request to configurator see if worker cluster is ready for use
+          const req = endPoint => {
+            cy.request('GET', endPoint).then(res => {
+              // When connectors field has the right connector info
+              // this means that everything is ready to be tested
+              const workerIsReady = res.body.state === undefined;
+
+              if (workerIsReady || count > max) return;
+
+              // if worker is not ready yet, wait a 2 sec and make another request
+              count++;
+              cy.wait(2000);
+              req(endPoint);
+            });
+          };
+
+          const endPoint = `api/workers/${name}`;
+          cy.request('GET', endPoint).then(() => req(endPoint));
+
           cy.request('DELETE', `api/workers/${name}?force=true`).then(() =>
             utils.recursiveDeleteWorker('api/workers', name),
           );

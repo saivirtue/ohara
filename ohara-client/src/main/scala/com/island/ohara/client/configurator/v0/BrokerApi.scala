@@ -104,8 +104,6 @@ object BrokerApi {
       extends ClusterInfo {
     // cluster does not support to define group
     override def group: String = GROUP_DEFAULT
-    override def clone2(state: Option[String], error: Option[String]): BrokerClusterInfo =
-      this.copy(state = state, error = error)
     override def kind: String = BROKER_SERVICE_NAME
     override def ports: Set[Int] = Set(clientPort, exporterPort, jmxPort)
     override def clone(newNodeNames: Set[String]): ClusterInfo = copy(nodeNames = newNodeNames)
@@ -247,7 +245,7 @@ object BrokerApi {
 
       override def update()(implicit executionContext: ExecutionContext): Future[BrokerClusterInfo] =
         exec.put[Update, BrokerClusterInfo, ErrorApi.Error](
-          s"${url}/${CommonUtils.requireNonEmpty(name)}",
+          s"$url/${CommonUtils.requireNonEmpty(name)}",
           update
         )
     }

@@ -23,7 +23,7 @@ import com.island.ohara.common.setting.ObjectKey
 import com.island.ohara.common.util.{CommonUtils, VersionUtils}
 import com.island.ohara.streams.config.StreamDefinitions.DefaultConfigs
 import spray.json.DefaultJsonProtocol._
-import spray.json.{JsArray, JsNull, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, _}
+import spray.json.{JsArray, JsNull, JsNumber, JsObject, JsString, JsValue, RootJsonFormat}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
@@ -82,8 +82,7 @@ object StreamApi {
 
     override def ports: Set[Int] = Set(plain(DefaultConfigs.JMX_PORT_DEFINITION.key()).toInt)
 
-    def jarKey: Option[ObjectKey] =
-      noJsNull(settings).get(DefaultConfigs.JAR_KEY_DEFINITION.key()).map(_.convertTo[ObjectKey])
+    def jarKey: Option[ObjectKey] = plain.get(DefaultConfigs.JAR_KEY_DEFINITION.key()).map(ObjectKey.toObjectKey)
 
     def jmxPort: Int = plain(DefaultConfigs.JMX_PORT_DEFINITION.key()).toInt
 
@@ -130,8 +129,10 @@ object StreamApi {
     def imageName: Option[String] =
       noJsNull(settings).get(DefaultConfigs.IMAGE_NAME_DEFINITION.key()).map(_.convertTo[String])
 
-    def jarKey: Option[ObjectKey] =
-      noJsNull(settings).get(DefaultConfigs.JAR_KEY_DEFINITION.key()).map(_.convertTo[ObjectKey])
+    def jarKey: Option[ObjectKey] = noJsNull(settings)
+      .get(DefaultConfigs.JAR_KEY_DEFINITION.key())
+      .map(_.convertTo[String])
+      .map(ObjectKey.toObjectKey)
 
     def jmxPort: Option[Int] = noJsNull(settings).get(DefaultConfigs.JMX_PORT_DEFINITION.key()).map(_.convertTo[Int])
 
@@ -212,7 +213,7 @@ object StreamApi {
     def imageName: String = plain(DefaultConfigs.IMAGE_NAME_DEFINITION.key())
     def instances: Int = plain(DefaultConfigs.INSTANCES_DEFINITION.key()).toInt
     // jarKey is required field in info
-    def jarKey: ObjectKey = noJsNull(settings)(DefaultConfigs.JAR_KEY_DEFINITION.key()).convertTo[ObjectKey]
+    def jarKey: ObjectKey = ObjectKey.toObjectKey(plain(DefaultConfigs.JAR_KEY_DEFINITION.key()))
     def from: Set[String] = noJsNull(settings)(DefaultConfigs.FROM_TOPICS_DEFINITION.key()).convertTo[Set[String]]
     def to: Set[String] = noJsNull(settings)(DefaultConfigs.TO_TOPICS_DEFINITION.key()).convertTo[Set[String]]
     def jmxPort: Int = plain(DefaultConfigs.JMX_PORT_DEFINITION.key()).toInt
@@ -220,8 +221,6 @@ object StreamApi {
     def exactlyOnce: Boolean = false
 
     override def clone(newNodeNames: Set[String]): StreamClusterInfo = copy(nodeNames = newNodeNames)
-    override def clone2(state: Option[String], error: Option[String]): StreamClusterInfo =
-      this.copy(state = state, error = error)
   }
   private[ohara] implicit val STREAM_CLUSTER_INFO_JSON_FORMAT: OharaJsonFormat[StreamClusterInfo] =
     JsonRefiner[StreamClusterInfo]
@@ -361,7 +360,8 @@ object StreamApi {
         settings = (Map(
           DefaultConfigs.IMAGE_NAME_DEFINITION.key() -> JsString(
             CommonUtils.requireNonEmpty(_imageName.getOrElse(IMAGE_NAME_DEFAULT))),
-          DefaultConfigs.JAR_KEY_DEFINITION.key() -> jarKey.fold[JsValue](JsNull)(_.toJson),
+          DefaultConfigs.JAR_KEY_DEFINITION.key() -> jarKey.fold[JsValue](JsNull)(s =>
+            JsString(ObjectKey.toJsonString(s))),
           DefaultConfigs.JMX_PORT_DEFINITION.key() -> JsNumber(
             CommonUtils.requireConnectionPort(_jmxPort.getOrElse(CommonUtils.availablePort()))),
           DefaultConfigs.FROM_TOPICS_DEFINITION.key() -> _from.fold[JsArray](JsArray.empty)(s =>

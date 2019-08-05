@@ -148,6 +148,10 @@ abstract class BasicTests4ClusterCollieByConfigurator extends BasicTests4Collie 
       .offsetTopicName(offsetTopicName)
       .create()
 
+  override protected def wk_start(clusterName: String): Future[Unit] = wkApi.start(clusterName)
+
+  override protected def wk_stop(clusterName: String): Future[Unit] = wkApi.forceStop(clusterName).map(_ => Unit)
+
   override protected def wk_clusters(): Future[Seq[WorkerApi.WorkerClusterInfo]] = wkApi.list()
 
   override protected def wk_logs(clusterName: String): Future[Seq[String]] =

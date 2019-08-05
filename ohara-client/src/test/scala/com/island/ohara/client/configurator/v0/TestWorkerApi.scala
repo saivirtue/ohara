@@ -47,7 +47,11 @@ class TestWorkerApi extends SmallTest with Matchers {
       jarInfos = Seq.empty,
       connectors = Seq.empty,
       nodeNames = Set.empty,
-      deadNodes = Set.empty
+      deadNodes = Set.empty,
+      state = None,
+      error = None,
+      tags = Map.empty,
+      lastModified = CommonUtils.current()
     )
 
     response shouldBe WORKER_CLUSTER_INFO_JSON_FORMAT.read(WORKER_CLUSTER_INFO_JSON_FORMAT.write(response))
@@ -75,7 +79,11 @@ class TestWorkerApi extends SmallTest with Matchers {
       jarInfos = Seq.empty,
       connectors = Seq.empty,
       nodeNames = Set.empty,
-      deadNodes = Set.empty
+      deadNodes = Set.empty,
+      state = None,
+      error = None,
+      tags = Map.empty,
+      lastModified = CommonUtils.current()
     )
     workerClusterInfo.clone(newNodeNames).nodeNames shouldBe newNodeNames
   }
@@ -89,6 +97,17 @@ class TestWorkerApi extends SmallTest with Matchers {
     .creation
     .name
     .length should not be 0
+
+  @Test
+  def testTags(): Unit = WorkerApi.access
+    .hostname(CommonUtils.randomString())
+    .port(CommonUtils.availablePort())
+    .request
+    .nodeName(CommonUtils.randomString(10))
+    .tags(Map("a" -> JsNumber(1), "b" -> JsString("2")))
+    .creation
+    .tags
+    .size shouldBe 2
 
   @Test
   def ignoreNodeNamesOnCreation(): Unit = an[IllegalArgumentException] should be thrownBy WorkerApi.access
@@ -300,10 +319,10 @@ class TestWorkerApi extends SmallTest with Matchers {
   def parseCreation(): Unit = {
     val nodeName = CommonUtils.randomString()
     val creation = WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
-                                                                  |  {
-                                                                  |    "nodeNames": ["$nodeName"]
-                                                                  |  }
-                                                                     """.stripMargin.parseJson)
+      |  {
+      |    "nodeNames": ["$nodeName"]
+      |  }
+      |  """.stripMargin.parseJson)
     creation.name.length shouldBe 10
     creation.imageName shouldBe WorkerApi.IMAGE_NAME_DEFAULT
     creation.brokerClusterName shouldBe None
@@ -318,11 +337,11 @@ class TestWorkerApi extends SmallTest with Matchers {
 
     val name = CommonUtils.randomString(10)
     val creation2 = WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
-                                                                                 |  {
-                                                                                 |    "name": "$name",
-                                                                                 |    "nodeNames": ["$nodeName"]
-                                                                                 |  }
-                                                                     """.stripMargin.parseJson)
+      |  {
+      |    "name": "$name",
+      |    "nodeNames": ["$nodeName"]
+      |  }
+      |  """.stripMargin.parseJson)
     creation2.name shouldBe name
     creation2.imageName shouldBe WorkerApi.IMAGE_NAME_DEFAULT
     creation2.brokerClusterName shouldBe None
@@ -339,28 +358,127 @@ class TestWorkerApi extends SmallTest with Matchers {
   @Test
   def parseEmptyNodeNames(): Unit =
     an[DeserializationException] should be thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
-                                                                                   |  {
-                                                                                   |    "name": "asdasd",
-                                                                                   |    "nodeNames": []
-                                                                                   |  }
-                                                                     """.stripMargin.parseJson)
+      |  {
+      |    "name": "asdasd",
+      |    "nodeNames": []
+      |  }
+      |  """.stripMargin.parseJson)
+  @Test
+  def parseNodeNamesOnUpdate(): Unit = {
+    val thrown1 = the[DeserializationException] thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "nodeNames": ""
+      |  }
+      |  """.stripMargin.parseJson)
+    thrown1.getMessage should include("the value of \"nodeNames\" can't be empty string")
+  }
 
   @Test
-  def testDeprecatedKeyJars(): Unit = {
-    val creation = WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
-                                                                 |  {
-                                                                 |    "name": "asdasd",
-                                                                 |    "jars": [
-                                                                 |      {
-                                                                 |        "group": "g",
-                                                                 |        "name": "n"
-                                                                 |      }
-                                                                 |    ],
-                                                                 |    "nodeNames": ["Aa"]
-                                                                 |  }
-                                                                     """.stripMargin.parseJson)
-    creation.jarKeys.size shouldBe 1
-    creation.jarKeys.head.name shouldBe "n"
-    creation.jarKeys.head.group shouldBe "g"
+  def parseZeroClientPort(): Unit =
+    an[DeserializationException] should be thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "name": "name",
+      |    "clientPort": 0,
+      |    "nodeNames": ["n"]
+      |  }
+      |  """.stripMargin.parseJson)
+
+  @Test
+  def parseNegativeClientPort(): Unit =
+    an[DeserializationException] should be thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "name": "name",
+      |    "clientPort": -1,
+      |    "nodeNames": ["n"]
+      |  }
+      |  """.stripMargin.parseJson)
+
+  @Test
+  def parseLargeClientPort(): Unit =
+    an[DeserializationException] should be thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "name": "name",
+      |    "clientPort": 999999,
+      |    "nodeNames": ["n"]
+      |  }
+      |  """.stripMargin.parseJson)
+
+  @Test
+  def parseClientPortOnUpdate(): Unit = {
+    val thrown1 = the[DeserializationException] thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "clientPort": 0
+      |  }
+      |  """.stripMargin.parseJson)
+    thrown1.getMessage should include("the connection port must be [1024, 65535)")
+
+    val thrown2 = the[DeserializationException] thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "clientPort": -9
+      |  }
+      |  """.stripMargin.parseJson)
+    thrown2.getMessage should include("\"clientPort\" MUST be bigger than or equal to zero")
+
+    val thrown3 = the[DeserializationException] thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "clientPort": 99999
+      |  }
+      |  """.stripMargin.parseJson)
+    thrown3.getMessage should include("the connection port must be [1024, 65535), but actual port is \"99999\"")
   }
+
+  @Test
+  def parseZeroJmxPort(): Unit =
+    an[DeserializationException] should be thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "name": "name",
+      |    "jmxPort": 0,
+      |    "nodeNames": ["n"]
+      |  }
+      |  """.stripMargin.parseJson)
+
+  @Test
+  def parseNegativeJmxPort(): Unit =
+    an[DeserializationException] should be thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "name": "name",
+      |    "jmxPort": -1,
+      |    "nodeNames": ["n"]
+      |  }
+      |  """.stripMargin.parseJson)
+
+  @Test
+  def parseLargeJmxPort(): Unit =
+    an[DeserializationException] should be thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "name": "name",
+      |    "jmxPort": 999999,
+      |    "nodeNames": ["n"]
+      |  }
+      |  """.stripMargin.parseJson)
+
+  @Test
+  def parseJmxPortOnUpdate(): Unit = {
+    val thrown1 = the[DeserializationException] thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "jmxPort": 0
+      |  }
+      |  """.stripMargin.parseJson)
+    thrown1.getMessage should include("the connection port must be [1024, 65535)")
+
+    val thrown2 = the[DeserializationException] thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "jmxPort": -9
+      |  }
+      |  """.stripMargin.parseJson)
+    thrown2.getMessage should include("\"jmxPort\" MUST be bigger than or equal to zero")
+
+    val thrown3 = the[DeserializationException] thrownBy WorkerApi.WORKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "jmxPort": 99999
+      |  }
+      |  """.stripMargin.parseJson)
+    thrown3.getMessage should include("the connection port must be [1024, 65535), but actual port is \"99999\"")
+  }
+
 }

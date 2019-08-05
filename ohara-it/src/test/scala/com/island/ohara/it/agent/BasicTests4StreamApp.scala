@@ -24,7 +24,7 @@ import com.island.ohara.agent.docker.{ContainerState, DockerClient}
 import com.island.ohara.client.configurator.v0.NodeApi.Node
 import com.island.ohara.client.configurator.v0.{ZookeeperApi, _}
 import com.island.ohara.common.data.{Row, Serializer}
-import com.island.ohara.common.setting.ObjectKey
+import com.island.ohara.common.setting.{ObjectKey, TopicKey}
 import com.island.ohara.common.util.{CommonUtils, Releasable}
 import com.island.ohara.configurator.Configurator
 import com.island.ohara.it.IntegrationTest
@@ -151,13 +151,14 @@ abstract class BasicTests4StreamApp extends IntegrationTest with Matchers {
 
       // create worker cluster
       log.info("create wkCluster...start")
-      val wkCluster = result(
+      result(
         wkApi.request
           .name(wkName)
           .brokerClusterName(bkCluster.name)
           .nodeNames(nodeCache.take(instances).map(_.name).toSet)
-          .create())
-      assertCluster(() => result(wkApi.list()), wkCluster.name)
+          .create()
+          .flatMap(wk => wkApi.start(wk.name)))
+      assertCluster(() => result(wkApi.list()), wkName)
       log.info("create wkCluster...done")
     }
   }
@@ -175,9 +176,15 @@ abstract class BasicTests4StreamApp extends IntegrationTest with Matchers {
     val stream = result(
       access.request.name(CommonUtils.randomString(10)).jarKey(ObjectKey.of(jarInfo.group, jarInfo.name)).create())
 
-    // update streamApp properties (use non-existed topics to make sure cluster failed)
+    // create topic
+    val topic1 = result(topicApi.request.name("bar").brokerClusterName(bkName).create())
+    result(topicApi.start(topic1.key))
+    val topic2 = result(topicApi.request.name("foo").brokerClusterName(bkName).create())
+    result(topicApi.start(topic2.key))
+
+    // update streamApp properties
     val properties = result(
-      access.request.name(stream.name).from(Set("bar-fake")).to(Set("foo-fake")).update()
+      access.request.name(stream.name).from(Set(topic1.topicNameOnKafka)).to(Set(topic2.topicNameOnKafka)).update()
     )
     properties.from.isEmpty shouldBe false
     properties.to.isEmpty shouldBe false
@@ -244,17 +251,17 @@ abstract class BasicTests4StreamApp extends IntegrationTest with Matchers {
 
   @Test
   def testRunSimpleStreamApp(): Unit = {
-    val from = "fromTopic"
-    val to = "toTopic"
+    val from = TopicKey.of("default", "fromTopic")
+    val to = TopicKey.of("default", "toTopic")
     val jar = new File(CommonUtils.path(System.getProperty("user.dir"), "build", "libs", "ohara-streamapp.jar"))
 
     // we make sure the broker cluster exists again (for create topic)
     assertCluster(() => result(bkApi.list()), bkName)
 
     // create topic
-    val topic1 = result(topicApi.request.name(from).brokerClusterName(bkName).create())
+    val topic1 = result(topicApi.request.key(from).brokerClusterName(bkName).create())
     result(topicApi.start(topic1.key))
-    val topic2 = result(topicApi.request.name(to).brokerClusterName(bkName).create())
+    val topic2 = result(topicApi.request.key(to).brokerClusterName(bkName).create())
     result(topicApi.start(topic2.key))
 
     // upload streamApp jar
@@ -268,18 +275,23 @@ abstract class BasicTests4StreamApp extends IntegrationTest with Matchers {
 
     // update streamApp properties
     val properties = result(
-      access.request.name(stream.name).from(Set(topic1.name)).to(Set(topic2.name)).instances(instances).update()
+      access.request
+        .name(stream.name)
+        .from(Set(topic1.topicNameOnKafka))
+        .to(Set(topic2.topicNameOnKafka))
+        .instances(instances)
+        .update()
     )
-    properties.from shouldBe Set(topic1.name)
-    properties.to shouldBe Set(topic2.name)
+    properties.from shouldBe Set(topic1.topicNameOnKafka)
+    properties.to shouldBe Set(topic2.topicNameOnKafka)
     properties.instances shouldBe instances
     properties.state shouldBe None
     properties.error shouldBe None
 
     // get streamApp property (cluster not create yet, hence no state)
     val getProperties = result(access.get(stream.name))
-    getProperties.from shouldBe Set(topic1.name)
-    getProperties.to shouldBe Set(topic2.name)
+    getProperties.from shouldBe Set(topic1.topicNameOnKafka)
+    getProperties.to shouldBe Set(topic2.topicNameOnKafka)
     getProperties.instances shouldBe instances
     getProperties.state shouldBe None
     getProperties.error shouldBe None

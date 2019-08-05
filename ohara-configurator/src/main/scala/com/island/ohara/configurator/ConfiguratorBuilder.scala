@@ -171,12 +171,18 @@ class ConfiguratorBuilder private[configurator] extends Builder[Configurator] {
           jarInfos = Seq.empty,
           connectors = Await.result(WorkerClient(wkConnectionProps).connectorDefinitions(), 10 seconds),
           nodeNames = Set(host),
-          deadNodes = Set.empty
+          deadNodes = Set.empty,
+          // In fake mode, we need to assign a state in creation for "GET" method to act like real case
+          state = Some(ClusterState.RUNNING.name),
+          error = None,
+          tags = Map.empty,
+          lastModified = CommonUtils.current()
         )
       }
       //TODO: we need to add data into store to use the APIs
       //TODO: refactor this if cluster data could be stored automatically...by Sam
       store.addIfAbsent[BrokerClusterInfo](bkCluster)
+      store.addIfAbsent[WorkerClusterInfo](wkCluster)
 
       collie.brokerCollie.addCluster(bkCluster)
       collie.workerCollie.addCluster(wkCluster)
@@ -250,8 +256,7 @@ class ConfiguratorBuilder private[configurator] extends Builder[Configurator] {
             ))
       }
 
-      // we don't need to collect wk clusters
-      (0 until numberOfWorkerCluster).foreach { index =>
+      val wkClusters = (0 until numberOfWorkerCluster).map { index =>
         val bkCluster = bkClusters((Math.random() % bkClusters.size).asInstanceOf[Int])
         collie.workerCollie.addCluster(
           WorkerClusterInfo(
@@ -275,7 +280,12 @@ class ConfiguratorBuilder private[configurator] extends Builder[Configurator] {
             jarInfos = Seq.empty,
             connectors = FakeWorkerClient.localConnectorDefinitions,
             nodeNames = bkCluster.nodeNames,
-            deadNodes = Set.empty
+            deadNodes = Set.empty,
+            // In fake mode, we need to assign a state in creation for "GET" method to act like real case
+            state = Some(ClusterState.RUNNING.name),
+            error = None,
+            tags = Map.empty,
+            lastModified = CommonUtils.current()
           ))
       }
 
@@ -283,6 +293,7 @@ class ConfiguratorBuilder private[configurator] extends Builder[Configurator] {
       //TODO: refactor this if cluster data could be stored automatically...by Sam
       zkClusters.foreach(store.addIfAbsent[ZookeeperClusterInfo])
       bkClusters.foreach(store.addIfAbsent[BrokerClusterInfo])
+      wkClusters.foreach(store.addIfAbsent[WorkerClusterInfo])
 
       // fake nodes
       zkClusters

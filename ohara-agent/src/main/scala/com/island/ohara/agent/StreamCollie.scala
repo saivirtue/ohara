@@ -106,9 +106,7 @@ trait StreamCollie extends Collie[StreamClusterInfo, StreamCollie.ClusterCreator
                           DefaultConfigs.NAME_DEFINITION.key() -> JsString(clusterName),
                           DefaultConfigs.IMAGE_NAME_DEFINITION.key() -> JsString(imageName),
                           DefaultConfigs.INSTANCES_DEFINITION.key() -> JsNumber(successfulContainers.size),
-                          DefaultConfigs.JAR_KEY_DEFINITION.key() -> JsObject(
-                            com.island.ohara.client.configurator.v0.GROUP_KEY -> JsString(jarKey.group()),
-                            com.island.ohara.client.configurator.v0.NAME_KEY -> JsString(jarKey.name())),
+                          DefaultConfigs.JAR_KEY_DEFINITION.key() -> JsString(ObjectKey.toJsonString(jarKey)),
                           DefaultConfigs.FROM_TOPICS_DEFINITION.key() -> JsArray(
                             JsString(settings(DefaultConfigs.FROM_TOPICS_DEFINITION.key()))
                           ),

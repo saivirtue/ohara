@@ -82,7 +82,9 @@ class TestPipelineRoute extends MediumTest with Matchers {
     pipelines.head.objects.size shouldBe 1
 
     // remove worker cluster
-    result(workerApi.delete(result(workerApi.list()).head.name))
+    val wk = result(workerApi.list()).head.name
+    result(workerApi.stop(wk))
+    result(workerApi.delete(wk))
 
     // worker cluster is gone so the object abstract should contain error
     pipeline = result(pipelineApi.get(pipeline.key))

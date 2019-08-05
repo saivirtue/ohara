@@ -53,6 +53,8 @@ describe('Container API', () => {
       brokerClusterName,
     });
 
+    cy.startWorker(workerClusterName);
+
     cy.fetchContainers(workerClusterName).then(response => {
       const {
         data: { isSuccess, result },

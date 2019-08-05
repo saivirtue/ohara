@@ -50,6 +50,8 @@ const setup = () => {
     nodeNames: [nodeName],
   }).as('testCreateWorker');
 
+  cy.startWorker(workerClusterName);
+
   return {
     workerClusterName,
   };
@@ -86,6 +88,7 @@ describe('Validate API', () => {
     };
 
     cy.validateConnector(params).then(response => {
+      cy.log(response);
       const {
         data: { isSuccess, result },
       } = response;

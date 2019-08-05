@@ -53,6 +53,8 @@ describe('Log API', () => {
       brokerClusterName,
     });
 
+    cy.startWorker(workerClusterName);
+
     cy.fetchLogs('workers', workerClusterName).then(response => {
       const {
         data: { isSuccess, result },

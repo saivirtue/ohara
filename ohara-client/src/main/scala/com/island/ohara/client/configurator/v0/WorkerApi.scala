@@ -23,7 +23,7 @@ import com.island.ohara.common.annotations.Optional
 import com.island.ohara.common.setting.ObjectKey
 import com.island.ohara.common.util.{CommonUtils, VersionUtils}
 import spray.json.DefaultJsonProtocol._
-import spray.json.{JsArray, JsNumber, JsObject, JsString, JsValue, RootJsonFormat}
+import spray.json.{JsArray, JsNull, JsNumber, JsObject, JsString, JsValue, RootJsonFormat}
 
 import scala.concurrent.{ExecutionContext, Future}
 object WorkerApi {
@@ -61,6 +61,10 @@ object WorkerApi {
   private[this] val CONNECTORS_KEY = "connectors"
   private[this] val NODE_NAMES_KEY = "nodeNames"
   private[this] val DEAD_NODES_KEY = "deadNodes"
+  private[this] val TAGS_KEY = "tags"
+  private[this] val LASTMODIFIED_KEY = "lastModified"
+  private[this] val STATE_KEY = "state"
+  private[this] val ERROR_KEY = "error"
 
   final case class Creation private[WorkerApi] (name: String,
                                                 imageName: String,
@@ -78,30 +82,25 @@ object WorkerApi {
                                                 statusTopicPartitions: Int,
                                                 statusTopicReplications: Short,
                                                 jarKeys: Set[ObjectKey],
-                                                nodeNames: Set[String])
+                                                nodeNames: Set[String],
+                                                tags: Map[String, JsValue])
       extends ClusterCreationRequest {
     override def group: String = GROUP_DEFAULT
     override def ports: Set[Int] = Set(clientPort, jmxPort)
-    // the properties is not stored in configurator so we can't maintain the tags now
-    // TODO: see https://github.com/oharastream/ohara/issues/1544
-    override def tags: Map[String, JsValue] = Map.empty
   }
 
   /**
     * exposed to configurator
     */
   private[ohara] implicit val WORKER_CREATION_JSON_FORMAT: OharaJsonFormat[Creation] =
-    JsonRefiner[Creation]
-      .format(jsonFormat16(Creation))
-      .rejectEmptyString()
-      // the node names can't be empty
-      .rejectEmptyArray("nodeNames")
+    ClusterJsonRefiner
+      .basicRulesOfCreation[Creation](IMAGE_NAME_DEFAULT)
+      .format(jsonFormat17(Creation))
       .rejectNegativeNumber()
       .nullToRandomPort("clientPort")
       .requireBindPort("clientPort")
       .nullToRandomPort("jmxPort")
       .requireBindPort("jmxPort")
-      .nullToString("imageName", IMAGE_NAME_DEFAULT)
       .nullToRandomString("groupId")
       .nullToRandomString("configTopicName")
       .nullToShort("configTopicReplications", 1)
@@ -111,15 +110,34 @@ object WorkerApi {
       .nullToRandomString("statusTopicName")
       .nullToInt("statusTopicPartitions", 1)
       .nullToShort("statusTopicReplications", 1)
-      // TODO: remove the deprecated key "jars"
-      .nullToAnotherValueOfKey("jarKeys", "jars")
       .nullToEmptyArray("jarKeys")
-      .stringRestriction(NAME_KEY)
-      .withNumber()
-      .withLowerCase()
-      .withLengthLimit(LIMIT_OF_NAME_LENGTH)
-      .toRefiner
-      .nullToString("name", () => CommonUtils.randomString(10))
+      .refine
+
+  final case class Update private[WorkerApi] (imageName: Option[String],
+                                              brokerClusterName: Option[String],
+                                              clientPort: Option[Int],
+                                              jmxPort: Option[Int],
+                                              groupId: Option[String],
+                                              configTopicName: Option[String],
+                                              // configTopicPartitions must be 1
+                                              configTopicReplications: Option[Short],
+                                              offsetTopicName: Option[String],
+                                              offsetTopicPartitions: Option[Int],
+                                              offsetTopicReplications: Option[Short],
+                                              statusTopicName: Option[String],
+                                              statusTopicPartitions: Option[Int],
+                                              statusTopicReplications: Option[Short],
+                                              jarKeys: Option[Set[ObjectKey]],
+                                              nodeNames: Option[Set[String]],
+                                              tags: Option[Map[String, JsValue]])
+      extends ClusterUpdateRequest
+  implicit val WORKER_UPDATE_JSON_FORMAT: OharaJsonFormat[Update] =
+    ClusterJsonRefiner
+      .basicRulesOfUpdate[Update]
+      .format(jsonFormat16(Update))
+      .rejectNegativeNumber()
+      .requireBindPort("clientPort")
+      .requireBindPort("jmxPort")
       .refine
 
   final case class WorkerClusterInfo private[ohara] (name: String,
@@ -140,7 +158,11 @@ object WorkerApi {
                                                      jarInfos: Seq[FileInfo],
                                                      connectors: Seq[Definition],
                                                      nodeNames: Set[String],
-                                                     deadNodes: Set[String])
+                                                     deadNodes: Set[String],
+                                                     tags: Map[String, JsValue],
+                                                     lastModified: Long,
+                                                     state: Option[String],
+                                                     error: Option[String])
       extends ClusterInfo {
 
     /**
@@ -150,17 +172,11 @@ object WorkerApi {
 
     override def ports: Set[Int] = Set(clientPort, jmxPort)
 
-    override def clone(newNodeNames: Set[String]): ClusterInfo = copy(nodeNames = newNodeNames)
-
     override def group: String = GROUP_DEFAULT
 
     override def kind: String = WORKER_SERVICE_NAME
 
-    // TODO: move it to be a part of constructor field ... by chia
-    override def lastModified: Long = CommonUtils.current()
-
-    // TODO: move it to be a part of constructor field ... by chia
-    override def tags: Map[String, JsValue] = Map.empty
+    override def clone(newNodeNames: Set[String]): ClusterInfo = copy(nodeNames = newNodeNames)
   }
 
   /**
@@ -191,6 +207,10 @@ object WorkerApi {
               CONNECTORS_KEY -> JsArray(obj.connectors.map(Definition.DEFINITION_JSON_FORMAT.write).toVector),
               NODE_NAMES_KEY -> JsArray(obj.nodeNames.map(JsString(_)).toVector),
               DEAD_NODES_KEY -> JsArray(obj.deadNodes.map(JsString(_)).toVector),
+              TAGS_KEY -> JsObject(obj.tags),
+              LASTMODIFIED_KEY -> JsNumber(obj.lastModified),
+              STATE_KEY -> obj.state.fold[JsValue](JsNull)(JsString(_)),
+              ERROR_KEY -> obj.error.fold[JsValue](JsNull)(JsString(_))
             ))
         )
 
@@ -214,7 +234,11 @@ object WorkerApi {
           jarInfos = noJsNull(json)(JAR_INFOS_KEY).convertTo[Seq[FileInfo]],
           connectors = noJsNull(json)(CONNECTORS_KEY).convertTo[Seq[Definition]],
           nodeNames = noJsNull(json)(NODE_NAMES_KEY).convertTo[Seq[String]].toSet,
-          deadNodes = noJsNull(json)(DEAD_NODES_KEY).convertTo[Seq[String]].toSet
+          deadNodes = noJsNull(json)(DEAD_NODES_KEY).convertTo[Seq[String]].toSet,
+          tags = noJsNull(json)(TAGS_KEY).asJsObject.fields,
+          lastModified = noJsNull(json)(LASTMODIFIED_KEY).convertTo[Long],
+          state = noJsNull(json).get(STATE_KEY).map(_.convertTo[String]),
+          error = noJsNull(json).get(ERROR_KEY).map(_.convertTo[String])
         )
       })
       .refine
@@ -259,6 +283,8 @@ object WorkerApi {
     def jarKeys(jarKeys: Set[ObjectKey]): Request
     def nodeName(nodeName: String): Request = nodeNames(Set(CommonUtils.requireNonEmpty(nodeName)))
     def nodeNames(nodeNames: Set[String]): Request
+    @Optional("default value is empty array in creation and None in update")
+    def tags(tags: Map[String, JsValue]): Request
 
     /**
       * generate the POST request
@@ -268,29 +294,44 @@ object WorkerApi {
     def create()(implicit executionContext: ExecutionContext): Future[WorkerClusterInfo]
 
     /**
+      * generate the PUT request
+      * @param executionContext execution context
+      * @return updated/created data
+      */
+    def update()(implicit executionContext: ExecutionContext): Future[WorkerClusterInfo]
+
+    /**
+      * for testing only
       * @return the payload of creation
       */
     private[v0] def creation: Creation
+
+    /**
+      * for testing only
+      * @return the payload of update
+      */
+    private[v0] def update: Update
   }
 
   final class Access private[WorkerApi] extends ClusterAccess[WorkerClusterInfo](WORKER_PREFIX_PATH, GROUP_DEFAULT) {
     def request: Request = new Request {
       private[this] var name: String = CommonUtils.randomString(LIMIT_OF_NAME_LENGTH)
-      private[this] var imageName: String = IMAGE_NAME_DEFAULT
-      private[this] var brokerClusterName: String = _
-      private[this] var clientPort: Int = CommonUtils.availablePort()
-      private[this] var jmxPort: Int = CommonUtils.availablePort()
-      private[this] var groupId: String = CommonUtils.randomString(10)
-      private[this] var configTopicName: String = s"$groupId-config-${CommonUtils.randomString(10)}"
-      private[this] var configTopicReplications: Short = 1
-      private[this] var offsetTopicName: String = s"$groupId-offset-${CommonUtils.randomString(10)}"
-      private[this] var offsetTopicPartitions: Int = 1
-      private[this] var offsetTopicReplications: Short = 1
-      private[this] var statusTopicName: String = s"$groupId-status-${CommonUtils.randomString(10)}"
-      private[this] var statusTopicPartitions: Int = 1
-      private[this] var statusTopicReplications: Short = 1
-      private[this] var jarKeys: Set[ObjectKey] = Set.empty
-      private[this] var nodeNames: Set[String] = Set.empty
+      private[this] var imageName: Option[String] = None
+      private[this] var brokerClusterName: Option[String] = None
+      private[this] var clientPort: Option[Int] = None
+      private[this] var jmxPort: Option[Int] = None
+      private[this] var groupId: Option[String] = None
+      private[this] var configTopicName: Option[String] = None
+      private[this] var configTopicReplications: Option[Short] = None
+      private[this] var offsetTopicName: Option[String] = None
+      private[this] var offsetTopicPartitions: Option[Int] = None
+      private[this] var offsetTopicReplications: Option[Short] = None
+      private[this] var statusTopicName: Option[String] = None
+      private[this] var statusTopicPartitions: Option[Int] = None
+      private[this] var statusTopicReplications: Option[Short] = None
+      private[this] var jarKeys: Option[Set[ObjectKey]] = None
+      private[this] var nodeNames: Option[Set[String]] = None
+      private[this] var tags: Map[String, JsValue] = _
 
       private[this] def legalNumber(number: Int, key: String): Int = {
         if (number <= 0) throw new IllegalArgumentException(s"the number of $key must be bigger than zero")
@@ -308,104 +349,138 @@ object WorkerApi {
       }
 
       override def imageName(imageName: String): Request = {
-        this.imageName = CommonUtils.requireNonEmpty(imageName)
+        this.imageName = Some(CommonUtils.requireNonEmpty(imageName))
         this
       }
 
       override def clientPort(clientPort: Int): Request = {
-        this.clientPort = CommonUtils.requireConnectionPort(clientPort)
+        this.clientPort = Some(CommonUtils.requireConnectionPort(clientPort))
         this
       }
 
       override def jmxPort(jmxPort: Int): Request = {
-        this.jmxPort = CommonUtils.requireConnectionPort(jmxPort)
+        this.jmxPort = Some(CommonUtils.requireConnectionPort(jmxPort))
         this
       }
 
       override def brokerClusterName(brokerClusterName: String): Request = {
-        this.brokerClusterName = CommonUtils.requireNonEmpty(brokerClusterName)
+        this.brokerClusterName = Some(CommonUtils.requireNonEmpty(brokerClusterName))
         this
       }
 
       override def groupId(groupId: String): Request = {
-        this.groupId = CommonUtils.requireNonEmpty(groupId)
+        this.groupId = Some(CommonUtils.requireNonEmpty(groupId))
         this
       }
 
       override def statusTopicName(statusTopicName: String): Request = {
-        this.statusTopicName = CommonUtils.requireNonEmpty(statusTopicName)
+        this.statusTopicName = Some(CommonUtils.requireNonEmpty(statusTopicName))
         this
       }
 
       override def statusTopicPartitions(statusTopicPartitions: Int): Request = {
-        this.statusTopicPartitions = legalNumber(statusTopicPartitions, "statusTopicPartitions")
+        this.statusTopicPartitions = Some(legalNumber(statusTopicPartitions, "statusTopicPartitions"))
         this
       }
 
       override def statusTopicReplications(statusTopicReplications: Short): Request = {
-        this.statusTopicReplications = legalNumber(statusTopicReplications, "statusTopicReplications")
+        this.statusTopicReplications = Some(legalNumber(statusTopicReplications, "statusTopicReplications"))
         this
       }
 
       override def configTopicName(configTopicName: String): Request = {
-        this.configTopicName = CommonUtils.requireNonEmpty(configTopicName)
+        this.configTopicName = Some(CommonUtils.requireNonEmpty(configTopicName))
         this
       }
 
       override def configTopicReplications(configTopicReplications: Short): Request = {
-        this.configTopicReplications = legalNumber(configTopicReplications, "configTopicReplications")
+        this.configTopicReplications = Some(legalNumber(configTopicReplications, "configTopicReplications"))
         this
       }
 
       override def offsetTopicName(offsetTopicName: String): Request = {
-        this.offsetTopicName = CommonUtils.requireNonEmpty(offsetTopicName)
+        this.offsetTopicName = Some(CommonUtils.requireNonEmpty(offsetTopicName))
         this
       }
 
       override def offsetTopicPartitions(offsetTopicPartitions: Int): Request = {
-        this.offsetTopicPartitions = legalNumber(offsetTopicPartitions, "offsetTopicPartitions")
+        this.offsetTopicPartitions = Some(legalNumber(offsetTopicPartitions, "offsetTopicPartitions"))
         this
       }
 
       override def offsetTopicReplications(offsetTopicReplications: Short): Request = {
-        this.offsetTopicReplications = legalNumber(offsetTopicReplications, "offsetTopicReplications")
+        this.offsetTopicReplications = Some(legalNumber(offsetTopicReplications, "offsetTopicReplications"))
         this
       }
 
       import scala.collection.JavaConverters._
       override def jarKeys(jarKeys: Set[ObjectKey]): Request = {
-        this.jarKeys = CommonUtils.requireNonEmpty(jarKeys.asJava).asScala.toSet
+        this.jarKeys = Some(CommonUtils.requireNonEmpty(jarKeys.asJava).asScala.toSet)
         this
       }
 
       override def nodeNames(nodeNames: Set[String]): Request = {
-        this.nodeNames = CommonUtils.requireNonEmpty(nodeNames.asJava).asScala.toSet
+        this.nodeNames = Some(CommonUtils.requireNonEmpty(nodeNames.asJava).asScala.toSet)
+        this
+      }
+
+      override def tags(tags: Map[String, JsValue]): Request = {
+        this.tags = Objects.requireNonNull(tags)
         this
       }
 
       override private[v0] def creation = Creation(
         name = CommonUtils.requireNonEmpty(name),
-        imageName = CommonUtils.requireNonEmpty(imageName),
-        brokerClusterName = Option(brokerClusterName),
-        clientPort = CommonUtils.requireConnectionPort(clientPort),
-        jmxPort = CommonUtils.requireConnectionPort(jmxPort),
-        groupId = CommonUtils.requireNonEmpty(groupId),
-        configTopicName = CommonUtils.requireNonEmpty(configTopicName),
-        configTopicReplications = legalNumber(configTopicReplications, "configTopicReplications"),
-        offsetTopicName = CommonUtils.requireNonEmpty(offsetTopicName),
-        offsetTopicPartitions = legalNumber(offsetTopicPartitions, "offsetTopicPartitions"),
-        offsetTopicReplications = legalNumber(offsetTopicReplications, "offsetTopicReplications"),
-        statusTopicName = CommonUtils.requireNonEmpty(statusTopicName),
-        statusTopicPartitions = legalNumber(statusTopicPartitions, "statusTopicPartitions"),
-        statusTopicReplications = legalNumber(statusTopicReplications, "statusTopicReplications"),
-        jarKeys = Objects.requireNonNull(jarKeys),
-        nodeNames = CommonUtils.requireNonEmpty(nodeNames.asJava).asScala.toSet
+        imageName = CommonUtils.requireNonEmpty(imageName.getOrElse(IMAGE_NAME_DEFAULT)),
+        brokerClusterName = brokerClusterName.map(CommonUtils.requireNonEmpty),
+        clientPort = CommonUtils.requireConnectionPort(clientPort.getOrElse(CommonUtils.availablePort())),
+        jmxPort = CommonUtils.requireConnectionPort(jmxPort.getOrElse(CommonUtils.availablePort())),
+        groupId = CommonUtils.requireNonEmpty(groupId.getOrElse(CommonUtils.randomString(10))),
+        configTopicName =
+          CommonUtils.requireNonEmpty(configTopicName.getOrElse(s"$groupId-config-${CommonUtils.randomString(10)}")),
+        configTopicReplications = legalNumber(configTopicReplications.getOrElse(1), "configTopicReplications"),
+        offsetTopicName =
+          CommonUtils.requireNonEmpty(offsetTopicName.getOrElse(s"$groupId-offset-${CommonUtils.randomString(10)}")),
+        offsetTopicPartitions = legalNumber(offsetTopicPartitions.getOrElse(1), "offsetTopicPartitions"),
+        offsetTopicReplications = legalNumber(offsetTopicReplications.getOrElse(1), "offsetTopicReplications"),
+        statusTopicName =
+          CommonUtils.requireNonEmpty(statusTopicName.getOrElse(s"$groupId-status-${CommonUtils.randomString(10)}")),
+        statusTopicPartitions = legalNumber(statusTopicPartitions.getOrElse(1), "statusTopicPartitions"),
+        statusTopicReplications = legalNumber(statusTopicReplications.getOrElse(1), "statusTopicReplications"),
+        jarKeys = Objects.requireNonNull(jarKeys.getOrElse(Set.empty)),
+        nodeNames = CommonUtils.requireNonEmpty(nodeNames.getOrElse(Set.empty).asJava).asScala.toSet,
+        tags = if (tags == null) Map.empty else tags
+      )
+
+      override private[v0] def update: Update = Update(
+        imageName = imageName.map(CommonUtils.requireNonEmpty),
+        brokerClusterName = brokerClusterName.map(CommonUtils.requireNonEmpty),
+        clientPort = clientPort.map(CommonUtils.requireConnectionPort),
+        jmxPort = jmxPort.map(CommonUtils.requireConnectionPort),
+        groupId = groupId.map(CommonUtils.requireNonEmpty),
+        configTopicName = configTopicName.map(CommonUtils.requireNonEmpty),
+        configTopicReplications = configTopicReplications.map(legalNumber(_, "configTopicReplications")),
+        offsetTopicName = offsetTopicName.map(CommonUtils.requireNonEmpty),
+        offsetTopicPartitions = offsetTopicPartitions.map(legalNumber(_, "offsetTopicPartitions")),
+        offsetTopicReplications = offsetTopicReplications.map(legalNumber(_, "offsetTopicReplications")),
+        statusTopicName = statusTopicName.map(CommonUtils.requireNonEmpty),
+        statusTopicPartitions = statusTopicPartitions.map(legalNumber(_, "statusTopicPartitions")),
+        statusTopicReplications = statusTopicReplications.map(legalNumber(_, "statusTopicReplications")),
+        jarKeys = jarKeys.map(key => Objects.requireNonNull(key)),
+        nodeNames = nodeNames.map(seq => CommonUtils.requireNonEmpty(seq.asJava).asScala.toSet),
+        tags = Option(tags)
       )
 
       override def create()(implicit executionContext: ExecutionContext): Future[WorkerClusterInfo] =
         exec.post[Creation, WorkerClusterInfo, ErrorApi.Error](
           url,
           creation
+        )
+
+      override def update()(implicit executionContext: ExecutionContext): Future[WorkerClusterInfo] =
+        exec.put[Update, WorkerClusterInfo, ErrorApi.Error](
+          s"$url/${CommonUtils.requireNonEmpty(name)}",
+          update
         )
     }
   }

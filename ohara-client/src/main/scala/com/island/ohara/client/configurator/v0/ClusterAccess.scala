@@ -40,9 +40,6 @@ abstract class ClusterAccess[Res <: ClusterInfo] private[v0] (prefixPath: String
     exec.get[Res, ErrorApi.Error](url(key(clusterName)))
   def delete(clusterName: String)(implicit executionContext: ExecutionContext): Future[Unit] =
     exec.delete[ErrorApi.Error](url(key(clusterName)))
-  //TODO remove this after finished #1544...by Sam
-  def forceDelete(clusterName: String)(implicit executionContext: ExecutionContext): Future[Unit] =
-    exec.delete[ErrorApi.Error](url(key = key(clusterName), params = Map(FORCE_KEY -> "true")))
   def list()(implicit executionContext: ExecutionContext): Future[Seq[Res]] =
     exec.get[Seq[Res], ErrorApi.Error](url)
   def addNode(clusterName: String, nodeName: String)(implicit executionContext: ExecutionContext): Future[Unit] =

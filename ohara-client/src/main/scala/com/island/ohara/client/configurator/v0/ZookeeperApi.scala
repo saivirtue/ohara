@@ -103,8 +103,6 @@ object ZookeeperApi {
       extends ClusterInfo {
     // cluster does not support to define group
     override def group: String = GROUP_DEFAULT
-    override def clone2(state: Option[String], error: Option[String]): ZookeeperClusterInfo =
-      this.copy(state = state, error = error)
     override def kind: String = ZOOKEEPER_SERVICE_NAME
     override def ports: Set[Int] = Set(clientPort, peerPort, electionPort)
     override def clone(newNodeNames: Set[String]): ClusterInfo = this.copy(nodeNames = newNodeNames)
@@ -236,7 +234,7 @@ object ZookeeperApi {
 
       override def update()(implicit executionContext: ExecutionContext): Future[ZookeeperClusterInfo] =
         exec.put[Update, ZookeeperClusterInfo, ErrorApi.Error](
-          s"${url}/${CommonUtils.requireNonEmpty(name)}",
+          s"$url/${CommonUtils.requireNonEmpty(name)}",
           update
         )
     }

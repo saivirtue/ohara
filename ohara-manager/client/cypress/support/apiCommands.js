@@ -75,6 +75,13 @@ Cypress.Commands.add('testCreateWorker', params =>
   workerApi.createWorker(params),
 );
 
+Cypress.Commands.add('startWorker', workerClusterName =>
+  workerApi.startWorker(workerClusterName),
+);
+Cypress.Commands.add('stopWorker', workerClusterName =>
+  workerApi.stopWorker(workerClusterName),
+);
+
 // Property API
 Cypress.Commands.add('deleteProperty', params =>
   streamApp.deleteProperty(params),
@@ -227,6 +234,9 @@ Cypress.Commands.add('deleteAllServices', () => {
 
     if (!isEmpty(workers)) {
       workers.forEach(worker => {
+        if (!isUndefined(worker.state)) {
+          cy.stopWorker(worker.name);
+        }
         cy.request('DELETE', `api/workers/${worker.name}`);
       });
     }

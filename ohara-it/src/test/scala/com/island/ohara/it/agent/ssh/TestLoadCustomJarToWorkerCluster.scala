@@ -127,6 +127,7 @@ class TestLoadCustomJarToWorkerCluster extends IntegrationTest with Matchers {
         .jarKeys(jars.map(jar => ObjectKey.of(jar.group, jar.name)).toSet)
         .nodeName(nodeCache.head.name)
         .create())
+    result(wkApi.start(wkCluster.name))
     assertCluster(() => result(wkApi.list()), wkCluster.name)
     // add all remaining node to the running worker cluster
     nodeCache.filterNot(n => wkCluster.nodeNames.contains(n.name)).foreach { n =>

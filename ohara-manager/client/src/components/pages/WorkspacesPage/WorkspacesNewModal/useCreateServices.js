@@ -25,16 +25,16 @@ const useCreateServices = url => {
   const { waitApi, getFinish } = useApi.useWaitApi();
   const fail = useRef();
   const createServices = async params => {
-    const { postParams, checkResult, needStart = true, waitUrl = url } = params;
+    const { postParams, checkResult } = params;
     await postApi(postParams);
     const name = get(getData(), 'data.result.name');
     if (!name) {
       fail.current = true;
       return;
     }
-    if (needStart) await putApi(`/${name}/start`);
+    await putApi(`/${name}/start`);
     await waitApi({
-      url: `${waitUrl}/${name}`,
+      url: `${url}/${name}`,
       checkFn: checkResult,
     });
     if (!getFinish()) {

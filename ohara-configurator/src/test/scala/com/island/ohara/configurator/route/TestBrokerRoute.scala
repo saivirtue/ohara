@@ -90,6 +90,11 @@ class TestBrokerRoute extends MediumTest with Matchers {
         .name(CommonUtils.randomString(10))
         .nodeNames(nodeNames)
         .create())
+    // start worker
+    result(
+      WorkerApi.access.hostname(configurator.hostname).port(configurator.port).start(wk.name)
+    )
+
     val bks = result(brokerApi.list())
 
     bks.isEmpty shouldBe false
@@ -98,6 +103,7 @@ class TestBrokerRoute extends MediumTest with Matchers {
     an[IllegalArgumentException] should be thrownBy result(brokerApi.stop(bk.name))
 
     // remove wk cluster
+    result(WorkerApi.access.hostname(configurator.hostname).port(configurator.port).stop(wk.name))
     result(WorkerApi.access.hostname(configurator.hostname).port(configurator.port).delete(wk.name))
 
     // pass
@@ -221,8 +227,8 @@ class TestBrokerRoute extends MediumTest with Matchers {
     result(brokerApi.start(cluster.name))
 
     // it's ok use keyword, but the "actual" behavior is not expected (expected addNode, but start/stop cluster)
-    result(brokerApi.addNode(cluster.name, RouteUtils.START_COMMAND))
-    result(brokerApi.addNode(cluster.name, RouteUtils.STOP_COMMAND))
+    result(brokerApi.addNode(cluster.name, RouteUtils.START_COMMAND).flatMap(_ => brokerApi.get(cluster.name))).nodeNames shouldBe cluster.nodeNames
+    result(brokerApi.addNode(cluster.name, RouteUtils.STOP_COMMAND).flatMap(_ => brokerApi.get(cluster.name))).nodeNames shouldBe cluster.nodeNames
     result(brokerApi.get(cluster.name)).state shouldBe None
   }
 
@@ -231,11 +237,8 @@ class TestBrokerRoute extends MediumTest with Matchers {
     val cluster = result(brokerApi.request.name(CommonUtils.randomString(10)).nodeName(nodeNames.head).create())
     result(brokerApi.start(cluster.name))
 
-    result(brokerApi.addNode(cluster.name, nodeNames.last))
-
-    result(brokerApi.get(cluster.name)).nodeNames shouldBe cluster
-      .copy(nodeNames = cluster.nodeNames ++ Set(nodeNames.last))
-      .nodeNames
+    result(brokerApi.addNode(cluster.name, nodeNames.last).flatMap(_ => brokerApi.get(cluster.name))).nodeNames shouldBe
+      cluster.copy(nodeNames = cluster.nodeNames ++ Set(nodeNames.last)).nodeNames
   }
 
   @Test

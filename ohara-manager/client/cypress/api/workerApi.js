@@ -62,6 +62,8 @@ const setup = () => {
     brokerClusterName,
   }).as('testCreateWorker');
 
+  cy.startWorker(workerClusterName);
+
   return {
     nodeName,
     zookeeperClusterName,
@@ -148,12 +150,46 @@ describe('Worker API', () => {
     });
   });
 
+  it('startWorker', () => {
+    const { workerClusterName } = setup();
+
+    cy.startWorker(workerClusterName).then(response => {
+      expect(response.data.isSuccess).to.eq(true);
+    });
+
+    cy.fetchWorker(workerClusterName).then(response => {
+      expect(response.data.result.state).to.eq('RUNNING');
+    });
+  });
+
+  it('stopWorker', () => {
+    const { workerClusterName } = setup();
+
+    cy.startWorker(workerClusterName).then(response => {
+      expect(response.data.isSuccess).to.eq(true);
+    });
+
+    cy.fetchWorker(workerClusterName).then(response => {
+      expect(response.data.result.state).to.eq('RUNNING');
+    });
+
+    cy.stopWorker(workerClusterName).then(response => {
+      expect(response.data.isSuccess).to.eq(true);
+    });
+
+    cy.fetchWorker(workerClusterName).then(response => {
+      expect(response.data.result.state).to.eq.undefined;
+    });
+  });
+
   it('deleteWorker', () => {
     const { workerClusterName } = setup();
 
     cy.get('@testCreateWorker').then(response => {
       expect(response.data.isSuccess).to.eq(true);
     });
+
+    cy.stopWorker(workerClusterName);
 
     // We're not currently using this API in the client, and so it's not
     // listed in the brokerApi.js, so we're asserting the response status
@@ -177,6 +213,8 @@ describe('Worker API', () => {
     cy.get('@testCreateWorker').then(response => {
       expect(response.data.isSuccess).to.eq(true);
     });
+
+    cy.stopWorker(workerClusterName);
 
     // We're not currently using this API in the client, and so it's not
     // listed in the brokerApi.js, so we're asserting the response status

@@ -16,6 +16,7 @@
 
 package com.island.ohara.agent
 
+import com.island.ohara.agent.docker.ContainerState
 import com.island.ohara.client.configurator.v0.BrokerApi.BrokerClusterInfo
 import com.island.ohara.client.configurator.v0.ContainerApi.ContainerInfo
 import com.island.ohara.client.configurator.v0.WorkerApi.WorkerClusterInfo
@@ -78,25 +79,31 @@ class FakeWorkerCollie(node: NodeCollie) extends WorkerCollie {
     implicit executionContext: ExecutionContext): Future[Map[WorkerClusterInfo, Seq[ContainerInfo]]] =
     Future.successful(
       Map(
-        WorkerClusterInfo("wk1",
-                          "worker",
-                          "bk1",
-                          8083,
-                          8084,
-                          "aaa",
-                          "statustopic",
-                          1,
-                          1,
-                          "conftopic",
-                          1,
-                          1,
-                          "offsettopic",
-                          1,
-                          1,
-                          Seq.empty,
-                          Seq.empty,
-                          Set("node1"),
-                          Set.empty) -> Seq(
+        WorkerClusterInfo(
+          "wk1",
+          "worker",
+          "bk1",
+          8083,
+          8084,
+          "aaa",
+          "statustopic",
+          1,
+          1,
+          "conftopic",
+          1,
+          1,
+          "offsettopic",
+          1,
+          1,
+          Seq.empty,
+          Seq.empty,
+          Set("node1"),
+          Set.empty,
+          Map.empty,
+          0L,
+          Some(ContainerState.RUNNING.name),
+          None
+        ) -> Seq(
           ContainerInfo("node1",
                         "aaaa",
                         "connect-worker",

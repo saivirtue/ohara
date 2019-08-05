@@ -111,7 +111,7 @@ abstract class BasicTests4ClusterCollie extends BasicTests4Collie {
     Future.successful(Unit)
 
   override protected def bk_addNode(clusterName: String, nodeName: String): Future[BrokerApi.BrokerClusterInfo] =
-    bkCollie.addNode(clusterName, nodeName)
+    bkCollie.addNode(clusterName, nodeName).flatMap(bk => bk_cluster(bk.name))
 
   override protected def bk_removeNode(clusterName: String, nodeName: String): Future[Unit] =
     bkCollie.removeNode(clusterName, nodeName).map(_ => Unit)
@@ -159,6 +159,13 @@ abstract class BasicTests4ClusterCollie extends BasicTests4Collie {
       .nodeNames(nodeNames)
       .create()
 
+  override protected def wk_start(clusterName: String): Future[Unit] =
+    // We don't need to start a cluster in collie since we already start a cluster by create method
+    Future.successful(Unit)
+
+  override protected def wk_stop(clusterName: String): Future[Unit] =
+    wkCollie.forceRemove(clusterName).map(_ => Unit)
+
   override protected def wk_clusters(): Future[Seq[WorkerApi.WorkerClusterInfo]] = wkCollie.clusters().map(_.keys.toSeq)
 
   override protected def wk_logs(clusterName: String): Future[Seq[String]] =
@@ -168,10 +175,11 @@ abstract class BasicTests4ClusterCollie extends BasicTests4Collie {
     wkCollie.containers(clusterName)
 
   override protected def wk_delete(clusterName: String): Future[Unit] =
-    wkCollie.forceRemove(clusterName).map(_ => Unit)
+    // We don't need to remove data stored in configurator in collie since there is nothing to do
+    Future.successful(Unit)
 
   override protected def wk_addNode(clusterName: String, nodeName: String): Future[WorkerApi.WorkerClusterInfo] =
-    wkCollie.addNode(clusterName, nodeName)
+    wkCollie.addNode(clusterName, nodeName).flatMap(wk => wk_cluster(wk.name))
 
   override protected def wk_removeNode(clusterName: String, nodeName: String): Future[Unit] =
     wkCollie.removeNode(clusterName, nodeName).map(_ => Unit)

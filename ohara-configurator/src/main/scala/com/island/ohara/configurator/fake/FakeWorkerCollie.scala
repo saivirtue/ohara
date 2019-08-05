@@ -18,11 +18,12 @@ package com.island.ohara.configurator.fake
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.island.ohara.agent.{NoSuchClusterException, NodeCollie, WorkerCollie}
+import com.island.ohara.agent.{ClusterState, NoSuchClusterException, NodeCollie, WorkerCollie}
 import com.island.ohara.client.configurator.v0.{ClusterInfo, ContainerApi, NodeApi}
 import com.island.ohara.client.configurator.v0.ContainerApi.ContainerInfo
 import com.island.ohara.client.configurator.v0.WorkerApi.WorkerClusterInfo
 import com.island.ohara.client.kafka.WorkerClient
+import com.island.ohara.common.util.CommonUtils
 import com.island.ohara.metrics.BeanChannel
 import com.island.ohara.metrics.basic.CounterMBean
 
@@ -80,7 +81,12 @@ private[configurator] class FakeWorkerCollie(node: NodeCollie, wkConnectionProps
             jarInfos = Seq.empty,
             connectors = FakeWorkerClient.localConnectorDefinitions,
             nodeNames = nodeNames,
-            deadNodes = Set.empty
+            deadNodes = Set.empty,
+            // In fake mode, we need to assign a state in creation for "GET" method to act like real case
+            state = Some(ClusterState.RUNNING.name),
+            error = None,
+            tags = Map.empty,
+            lastModified = CommonUtils.current()
           )))
 
   override protected def doRemoveNode(previousCluster: WorkerClusterInfo, beRemovedContainer: ContainerInfo)(
@@ -105,7 +111,12 @@ private[configurator] class FakeWorkerCollie(node: NodeCollie, wkConnectionProps
         jarInfos = previousCluster.jarInfos,
         connectors = FakeWorkerClient.localConnectorDefinitions,
         nodeNames = previousCluster.nodeNames.filterNot(_ == beRemovedContainer.nodeName),
-        deadNodes = Set.empty
+        deadNodes = Set.empty,
+        // In fake mode, we need to assign a state in creation for "GET" method to act like real case
+        state = Some(ClusterState.RUNNING.name),
+        error = None,
+        tags = Map.empty,
+        lastModified = CommonUtils.current()
       )))
     .map(_ => true)
 
@@ -143,7 +154,12 @@ private[configurator] class FakeWorkerCollie(node: NodeCollie, wkConnectionProps
           jarInfos = previousCluster.jarInfos,
           connectors = FakeWorkerClient.localConnectorDefinitions,
           nodeNames = previousCluster.nodeNames ++ Set(newNodeName),
-          deadNodes = Set.empty
+          deadNodes = Set.empty,
+          // In fake mode, we need to assign a state in creation for "GET" method to act like real case
+          state = Some(ClusterState.RUNNING.name),
+          error = None,
+          tags = Map.empty,
+          lastModified = CommonUtils.current()
         )))
 
   override protected def doCreator(executionContext: ExecutionContext,

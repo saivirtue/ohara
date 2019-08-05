@@ -103,6 +103,8 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
                           offsetTopicName: String,
                           bkClusterName: String,
                           nodeNames: Set[String]): Future[WorkerClusterInfo]
+  protected def wk_start(clusterName: String): Future[Unit]
+  protected def wk_stop(clusterName: String): Future[Unit]
   protected def wk_cluster(clusterName: String): Future[WorkerClusterInfo] =
     wk_clusters().map(_.find(_.name == clusterName).get)
   protected def wk_clusters(): Future[Seq[WorkerClusterInfo]]
@@ -136,6 +138,19 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
     })
     // the cluster is stopped actually, delete the data
     bk_delete(clusterName)
+  }
+
+  private[this] def cleanWorker(clusterName: String): Future[Unit] = {
+    result(wk_stop(clusterName))
+    await(() => {
+      // In configurator mode: clusters() will return the "stopped list" in normal case
+      // In collie mode: clusters() will return the "cluster list except stop one" in normal case
+      // we should consider these two cases by case...
+      val clusters = result(wk_clusters())
+      !clusters.map(_.name).contains(clusterName) || clusters.find(_.name == clusterName).get.state.isEmpty
+    })
+    // the cluster is stopped actually, delete the data
+    wk_delete(clusterName)
   }
 
   /**
@@ -510,6 +525,8 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
               nodeNames = Set(nodeName)
             )))
         log.info("[WORKER] create done")
+        result(wk_start(wkCluster.name))
+        log.info("[WORKER] start done")
         assertCluster(() => result(wk_clusters()), wkCluster.name)
         log.info("[WORKER] check existence")
         assert(result(wk_cluster(wkCluster.name)))
@@ -558,7 +575,7 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
           testConnectors(curCluster)
           testJmx(curCluster)
         } finally if (cleanup) {
-          result(wk_delete(wkCluster.name))
+          result(cleanWorker(wkCluster.name))
           assertNoCluster(() => result(wk_clusters()), wkCluster.name)
         }
       } finally if (cleanup) {
@@ -818,6 +835,7 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
               nodeNames = nodeCache.map(_.name).toSet
             ))
       }
+      clusters.foreach(wk => result(wk_start(wk.name)))
       log.info(s"check multi wk clusters:$wkNames")
       // add a bit wait to make sure the cluster is up
       TimeUnit.SECONDS.sleep(10)
@@ -838,7 +856,7 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
       }
     } finally if (cleanup) {
       wkNames.foreach { name =>
-        try result(wk_delete(name))
+        try result(cleanWorker(name))
         catch {
           case _: Throwable =>
           // do nothing

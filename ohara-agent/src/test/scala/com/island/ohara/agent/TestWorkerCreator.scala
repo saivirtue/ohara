@@ -90,7 +90,11 @@ class TestWorkerCreator extends SmallTest with Matchers {
         jarInfos = jarInfos,
         connectors = Seq.empty,
         nodeNames = nodeNames,
-        deadNodes = Set.empty
+        deadNodes = Set.empty,
+        state = None,
+        error = None,
+        tags = Map.empty,
+        lastModified = 0
       ))
   }
 
@@ -243,7 +247,11 @@ class TestWorkerCreator extends SmallTest with Matchers {
       jarInfos = Seq.empty,
       connectors = Seq.empty,
       nodeNames = Set(CommonUtils.randomString()),
-      deadNodes = Set.empty
+      deadNodes = Set.empty,
+      state = None,
+      error = None,
+      tags = Map.empty,
+      lastModified = 0
     )
     Await.result(wkCreator().copy(workerClusterInfo).create(), 30 seconds) shouldBe workerClusterInfo
   }

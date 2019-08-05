@@ -245,6 +245,13 @@ class TestZookeeperRoute extends MediumTest with Matchers {
 
     // we could graceful stop zookeeper
     result(zookeeperApi.stop(zk.name))
+    // stop should be idempotent
+    result(zookeeperApi.stop(zk.name))
+    // delete should be idempotent also
+    result(zookeeperApi.delete(zk.name))
+    result(zookeeperApi.delete(zk.name))
+    // after delete, stop will cause NoSuchElement exception
+    an[IllegalArgumentException] should be thrownBy result(zookeeperApi.stop(zk.name))
   }
 
   @Test

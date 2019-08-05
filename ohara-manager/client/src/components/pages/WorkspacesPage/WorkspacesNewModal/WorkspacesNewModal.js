@@ -58,6 +58,7 @@ const WorkerNewModal = props => {
   const { data: nodes } = useApi.useFetchApi(URL.NODE_URL);
   const { putApi: putZookeeper } = useApi.usePutApi(URL.ZOOKEEPER_URL);
   const { putApi: putBroker } = useApi.usePutApi(URL.BROKER_URL);
+  const { putApi: putWorker } = useApi.usePutApi(URL.WORKER_URL);
   const { waitApi, getFinish } = useApi.useWaitApi();
   const {
     create: createZookeeper,
@@ -218,6 +219,12 @@ const WorkerNewModal = props => {
     setActiveStep(3);
     await Promise.all(
       wks.map(async wk => {
+        await putWorker(`/${wk.name}/stop`);
+        await waitService({
+          service: 'worker',
+          name: wk.name,
+          type: 'stop',
+        });
         await deleteWorker(`${wk.name}`);
         await waitService({
           service: 'worker',
@@ -329,14 +336,9 @@ const WorkerNewModal = props => {
       statusTopicName: generate.serviceName(),
     };
 
-    const checkContainerResult = res => {
-      return 'RUNNING' === get(res, 'data.result[0].containers[0].state', null);
-    };
     await createWorker({
       postParams: workerPostParams,
-      checkResult: checkContainerResult,
-      needStart: false,
-      waitUrl: URL.CONTAINER_URL,
+      checkResult: checkResult,
     });
     if (handleWorker()) throw new ERROR();
     setActiveStep(3);

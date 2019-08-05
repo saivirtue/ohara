@@ -130,8 +130,6 @@ object ZookeeperRoute {
       }
   }
 
-  private[this] def hookOfGroup: HookOfGroup = _ => GROUP_DEFAULT
-
   private[this] def hookOfStart(implicit store: DataStore,
                                 clusterCollie: ClusterCollie,
                                 executionContext: ExecutionContext): HookOfAction =
@@ -168,6 +166,8 @@ object ZookeeperRoute {
                   throw new IllegalArgumentException(
                     s"you can't remove zookeeper cluster:${zkClusterInfo.name} since it is used by broker cluster:${cluster.name}"))
           ))
+
+  private[this] def hookOfGroup: HookOfGroup = _ => GROUP_DEFAULT
 
   def apply(implicit store: DataStore,
             clusterCollie: ClusterCollie,

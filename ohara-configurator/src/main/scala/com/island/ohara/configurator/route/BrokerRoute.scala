@@ -17,7 +17,7 @@
 package com.island.ohara.configurator.route
 
 import akka.http.scaladsl.server
-import com.island.ohara.agent._
+import com.island.ohara.agent.{ClusterCollie, NodeCollie, ZookeeperCollie}
 import com.island.ohara.client.configurator.v0.BrokerApi.{Creation, _}
 import com.island.ohara.client.configurator.v0.TopicApi
 import com.island.ohara.common.setting.ObjectKey
@@ -28,7 +28,6 @@ import com.island.ohara.configurator.store.DataStore
 import scala.concurrent.{ExecutionContext, Future}
 object BrokerRoute {
 
-  //TODO : move this to RouteUtils after #1544...by Sam
   private[this] def updateState(info: BrokerClusterInfo)(
     implicit store: DataStore,
     clusterCollie: ClusterCollie,
@@ -146,8 +145,6 @@ object BrokerRoute {
       }
   }
 
-  private[this] def hookOfGroup: HookOfGroup = _ => GROUP_DEFAULT
-
   private[this] def hookOfStart(implicit store: DataStore,
                                 clusterCollie: ClusterCollie,
                                 executionContext: ExecutionContext): HookOfAction =
@@ -194,6 +191,8 @@ object BrokerRoute {
                     throw new IllegalArgumentException(
                       s"you can't remove broker cluster:${brokerClusterInfo.name} since it is used by worker cluster:${cluster.name}"))
             ))
+
+  private[this] def hookOfGroup: HookOfGroup = _ => GROUP_DEFAULT
 
   def apply(implicit store: DataStore,
             zookeeperCollie: ZookeeperCollie,

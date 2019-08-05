@@ -104,6 +104,40 @@ export const addNodeToWorker = async params => {
   }
 };
 
+export const startWorker = async name => {
+  try {
+    const url = `/api/workers/${name}/start`;
+
+    const res = await axiosInstance.put(url);
+    const isSuccess = get(res, 'data.isSuccess', false);
+
+    if (!isSuccess) {
+      handleError(res);
+    }
+
+    return res;
+  } catch (err) {
+    handleError(err);
+  }
+};
+
+export const stopWorker = async name => {
+  try {
+    const url = `/api/workers/${name}/stop`;
+
+    const res = await axiosInstance.put(url);
+    const isSuccess = get(res, 'data.isSuccess', false);
+
+    if (!isSuccess) {
+      handleError(res);
+    }
+
+    return res;
+  } catch (err) {
+    handleError(err);
+  }
+};
+
 export const deleteWorker = async name => {
   try {
     const url = `/api/workers/${name}`;

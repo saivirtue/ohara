@@ -65,6 +65,7 @@ class TestStreamRoute extends SmallTest with Matchers {
     // update partial properties
     val res2 = result(accessStream.request.name(defaultProps.name).to(Set("to1")).instances(10).update())
     res2.name shouldBe name
+    res2.jarKey shouldBe jar.key
     res2.from shouldBe Set.empty
     res2.to shouldBe Set("to1")
     res2.instances shouldBe 10

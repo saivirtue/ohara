@@ -192,10 +192,7 @@ private[configurator] object StreamRoute {
               DefaultConfigs.TO_TOPICS_DEFINITION.key() -> JsArray(req.to.map(JsString(_)).toVector),
               DefaultConfigs.JAR_KEY_DEFINITION.key() -> {
                 val jarKey = checkField(key, req.jarKey, DefaultConfigs.JAR_KEY_DEFINITION.key())
-                JsObject(
-                  GROUP_KEY -> JsString(jarKey.group()),
-                  NAME_KEY -> JsString(jarKey.name())
-                )
+                JsString(ObjectKey.toJsonString(jarKey))
               },
               DefaultConfigs.IMAGE_NAME_DEFINITION.key() -> JsString(req.imageName.getOrElse(IMAGE_NAME_DEFAULT)),
               DefaultConfigs.INSTANCES_DEFINITION.key() -> JsNumber(
@@ -232,10 +229,8 @@ private[configurator] object StreamRoute {
               DefaultConfigs.JMX_PORT_DEFINITION.key() -> JsNumber(
                 req.jmxPort.getOrElse(previous.jmxPort)
               ),
-              DefaultConfigs.JAR_KEY_DEFINITION.key() -> JsObject(
-                GROUP_KEY -> JsString(req.jarKey.getOrElse(previous.jarKey).group()),
-                NAME_KEY -> JsString(req.jarKey.getOrElse(previous.jarKey).name())
-              ),
+              DefaultConfigs.JAR_KEY_DEFINITION.key() ->
+                JsString(ObjectKey.toJsonString(req.jarKey.getOrElse(previous.jarKey))),
               DefaultConfigs.TAGS_DEFINITION.key() -> JsObject(
                 req.tags.getOrElse(previous.tags)
               )
@@ -308,26 +303,29 @@ private[configurator] object StreamRoute {
                       // if require node name is not in nodeCollie, do not take that node
                       CommonUtils.requireNonEmpty(all.filter(n => data.nodeNames.contains(n.name)).asJava).asScala.toSet
                   }
-                  .flatMap(
-                    nodes =>
-                      clusterCollie.streamCollie.creator
-                        .clusterName(data.name)
-                        .nodeNames(nodes.map(_.name))
-                        .imageName(IMAGE_NAME_DEFAULT)
-                        .jarUrl(url.toString)
-                        // these settings will send to container environment
-                        // we convert all value to string for convenient
-                        .settings(data.settings.map {
-                          case (k, v) =>
-                            k -> (v match {
-                              case JsString(value) => value
-                              case JsArray(arr)    => arr.mkString(",")
-                              case _               => v.toString()
-                            })
-                        } + (DefaultConfigs.BROKER_DEFINITION.key() -> bkProps)
-                          + (DefaultConfigs.EXACTLY_ONCE_DEFINITION.key() -> data.exactlyOnce.toString))
-                        .threadPool(executionContext)
-                        .create())
+                  .flatMap(nodes => {
+                    import DefaultJsonProtocol._
+                    clusterCollie.streamCollie.creator
+                      .clusterName(data.name)
+                      .nodeNames(nodes.map(_.name))
+                      .imageName(IMAGE_NAME_DEFAULT)
+                      .jarUrl(url.toString)
+                      .jmxPort(data.settings(DefaultConfigs.JMX_PORT_DEFINITION.key()).convertTo[Int])
+                      // these settings will send to container environment
+                      // we convert all value to string for convenient
+                      .settings(data.settings.map {
+                        case (k, v) =>
+                          k -> (v match {
+                            case JsString(value) => value
+                            case JsArray(arr) =>
+                              arr.map(_.convertTo[String]).mkString(",")
+                            case _ => v.toString()
+                          })
+                      } + (DefaultConfigs.BROKER_DEFINITION.key() -> bkProps)
+                        + (DefaultConfigs.EXACTLY_ONCE_DEFINITION.key() -> data.exactlyOnce.toString))
+                      .threadPool(executionContext)
+                      .create()
+                  })
               }
           }
           .map(_ => Unit)

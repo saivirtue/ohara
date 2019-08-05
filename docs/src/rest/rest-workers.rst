@@ -245,8 +245,8 @@ element. However, we still list the available values here.
 
 .. _rest-workers-create:
 
-create a worker cluster
------------------------
+create a worker properties
+--------------------------
 
 *POST /v0/workers*
 
@@ -340,8 +340,8 @@ Example Request
        "name": "wk00",
        "jarKeys": [
            {
-             "group": "abc",
-             "name": "myjar"
+             "group": "default",
+             "name": "ohara-it-sink.jar"
            }
        ],
        "nodeNames": [
@@ -370,7 +370,16 @@ Example Response
        "offsetTopicName": "offset-956c528fa5",
        "imageName": "oharastream/connect-worker:$|version|",
        "groupId": "dcafb19d0e",
-       "jarInfos": [],
+       "jarInfos": [
+         {
+           "name": "ohara-it-sink.jar",
+           "size": 6805,
+           "url": "http://192.168.99.1:12345/v0/downloadFiles/default/ohara-it-sink.jar",
+           "lastModified": 1564971857485,
+           "tags": {},
+           "group": "default"
+         }
+       ],
        "statusTopicReplications": 1,
        "configTopicPartitions": 1,
        "offsetTopicReplications": 1,
@@ -422,14 +431,12 @@ Example Response
      ]
 
 
-delete a worker cluster
------------------------
+delete a worker properties
+--------------------------
 
 *DELETE /v0/workers/$name*
 
-Query Parameters
-  #. force (**boolean**) — true if you don’t want to wait the graceful shutdown
-     (it can save your time but may damage your data). Other values invoke graceful delete.
+You cannot delete properties of an non-stopped worker cluster.
 
 Example Response
   ::
@@ -652,6 +659,38 @@ Example Response
        ],
        "deadNodes": []
      }
+
+start a worker cluster
+----------------------
+
+*PUT /v0/workers/$name/start*
+
+Example Response
+  ::
+
+    202 Accepted
+
+  .. note::
+     You should use :ref:`Get worker cluster <rest-workers-get>` to fetch up-to-date status
+
+stop a worker cluster
+---------------------
+
+Gracefully stopping a running worker cluster.
+
+*PUT /v0/workers/$name/stop[?force=true]*
+
+Query Parameters
+  #. force (**boolean**) — true if you don’t want to wait the graceful shutdown
+     (it can save your time but may damage your data).
+
+Example Response
+  ::
+
+    202 Accepted
+
+  .. note::
+     You should use :ref:`Get worker cluster <rest-workers-get>` to fetch up-to-date status
 
 
 add a new node to a running worker cluster

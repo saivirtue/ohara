@@ -52,6 +52,8 @@ const setup = () => {
     nodeNames: [nodeName],
   });
 
+  cy.startWorker(workerClusterName);
+
   cy.testCreateTopic({
     name: topicName,
     brokerClusterName,
