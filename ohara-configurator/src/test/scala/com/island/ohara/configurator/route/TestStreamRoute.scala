@@ -21,7 +21,7 @@ import com.island.ohara.client.configurator.v0._
 import com.island.ohara.common.rule.SmallTest
 import com.island.ohara.common.util.{CommonUtils, Releasable}
 import com.island.ohara.configurator.Configurator
-import com.island.ohara.kafka.connector.json.ObjectKey
+import com.island.ohara.kafka.connector.json.{ObjectKey, TopicKey}
 import org.junit.{After, Test}
 import org.scalatest.Matchers
 import spray.json.{JsNumber, JsString}
@@ -32,6 +32,7 @@ class TestStreamRoute extends SmallTest with Matchers {
 
   // create all fake cluster
   private[this] val configurator = Configurator.builder.fake().build()
+  private[this] val topicApi = TopicApi.access.hostname(configurator.hostname).port(configurator.port)
   private[this] val wkApi = WorkerApi.access.hostname(configurator.hostname).port(configurator.port)
 
   private[this] val accessJar = FileInfoApi.access.hostname(configurator.hostname).port(configurator.port)
@@ -110,6 +111,8 @@ class TestStreamRoute extends SmallTest with Matchers {
     val streamAppName = CommonUtils.randomString(5)
     // we should have only one worker cluster
     val wkName = result(wkApi.list).head.name
+    val from = TopicKey.of("group", "fromTopic")
+    val to = TopicKey.of("group", "toTopic")
 
     // upload jar
     val streamJar = result(accessJar.request.group(wkName).file(file).upload())
@@ -120,18 +123,28 @@ class TestStreamRoute extends SmallTest with Matchers {
 
     // update properties
     result(
-      accessStream.request.name(streamAppName).from(Set("fromTopic")).to(Set("toTopic")).instances(instances).update())
+      accessStream.request
+        .name(streamAppName)
+        .from(Set(from.topicNameOnKafka()))
+        .to(Set(to.topicNameOnKafka()))
+        .instances(instances)
+        .update())
+
+    // run topics
+    topicApi.request.key(from).create().flatMap(info => topicApi.start(info.key))
+    topicApi.request.key(to).create().flatMap(info => topicApi.start(info.key))
 
     result(accessStream.start(props.name))
     val res1 = result(accessStream.get(props.name))
     res1.name shouldBe props.name
     res1.name shouldBe streamAppName
-    res1.from shouldBe Set("fromTopic")
-    res1.to shouldBe Set("toTopic")
+    res1.from shouldBe Set(from.topicNameOnKafka())
+    res1.to shouldBe Set(to.topicNameOnKafka())
     res1.jarKey.name shouldBe streamJar.name
     res1.instances shouldBe instances
     res1.state.get shouldBe ContainerState.RUNNING.name
 
+    // get again
     val running = result(accessStream.get(props.name))
     running.state.get shouldBe ContainerState.RUNNING.name
     running.error.isEmpty shouldBe true
@@ -142,7 +155,7 @@ class TestStreamRoute extends SmallTest with Matchers {
     // jmx port should be positive
     cluster.head._1.jmxPort should not be 0
 
-    // create the same streamApp cluster will get the previous stream cluster
+    // start the same streamApp cluster will get the previous stream cluster
     result(accessStream.start(props.name))
     val prevRes = result(accessStream.get(props.name))
     prevRes.name shouldBe props.name
@@ -209,6 +222,8 @@ class TestStreamRoute extends SmallTest with Matchers {
     val file = CommonUtils.createTempJar("empty_")
     val streamAppName = CommonUtils.randomString(5)
     val wkName = result(wkApi.list()).head.name
+    val from = TopicKey.of("group", "fromTopic")
+    val to = TopicKey.of("group", "toTopic")
 
     // upload jar
     val streamJar = result(accessJar.request.group(wkName).file(file).upload())
@@ -217,10 +232,18 @@ class TestStreamRoute extends SmallTest with Matchers {
     result(accessStream.request.name(streamAppName).jarKey(ObjectKey.of(streamJar.group, streamJar.name)).create())
     an[IllegalArgumentException] should be thrownBy result(accessStream.start(streamAppName))
 
-    result(accessStream.request.name(streamAppName).from(Set("from")).update())
+    result(accessStream.request.name(streamAppName).from(Set(from.topicNameOnKafka())).update())
     an[IllegalArgumentException] should be thrownBy result(accessStream.start(streamAppName))
 
-    result(accessStream.request.name(streamAppName).to(Set("to")).update())
+    result(accessStream.request.name(streamAppName).to(Set(to.topicNameOnKafka())).update())
+
+    // non-exist topics in broker will cause running fail
+    an[IllegalArgumentException] should be thrownBy result(accessStream.start(streamAppName))
+
+    // run topics
+    topicApi.request.key(from).create().flatMap(info => topicApi.start(info.key))
+    topicApi.request.key(to).create().flatMap(info => topicApi.start(info.key))
+
     // after all required parameters are set, it is ok to run
     result(accessStream.start(streamAppName))
 

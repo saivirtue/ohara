@@ -22,6 +22,7 @@ import akka.http.scaladsl.server
 import com.island.ohara.agent.{BrokerCollie, ClusterCollie, NodeCollie, WorkerCollie}
 import com.island.ohara.client.configurator.v0.MetricsApi.Metrics
 import com.island.ohara.client.configurator.v0.StreamApi._
+import com.island.ohara.client.kafka.TopicAdmin.TopicInfo
 import com.island.ohara.common.util.CommonUtils
 import com.island.ohara.configurator.file.FileStore
 import com.island.ohara.configurator.route.RouteUtils._
@@ -148,14 +149,19 @@ private[configurator] object StreamRoute {
     *
     * @param data streamApp data
     */
-  private[this] def assertParameters(data: StreamClusterInfo): Unit = {
+  private[this] def assertParameters(data: StreamClusterInfo, topicInfos: Seq[TopicInfo]): Unit = {
     CommonUtils.requireNonEmpty(data.name, () => "name fail assert")
     CommonUtils.requireConnectionPort(data.jmxPort)
     Objects.requireNonNull(data.jarKey)
-    // from topic should be defined
-    CommonUtils.requireNonEmpty(data.from.asJava, () => "from topic fail assert")
-    // to topic should be defined
-    CommonUtils.requireNonEmpty(data.to.asJava, () => "to topic fail assert")
+    // from topic should be defined and starting
+    val fromTopics = CommonUtils.requireNonEmpty(data.from.asJava, () => "from topic fail assert")
+    if (!topicInfos.exists(t => fromTopics.contains(t.name)))
+      throw new NoSuchElementException(s"topic:$fromTopics is not running")
+
+    // to topic should be defined and starting
+    val toTopics = CommonUtils.requireNonEmpty(data.to.asJava, () => "to topic fail assert")
+    if (!topicInfos.exists(t => toTopics.contains(t.name)))
+      throw new NoSuchElementException(s"topic:$toTopics is not running")
   }
 
   private[this] def hookOfGet(implicit store: DataStore,
@@ -270,7 +276,6 @@ private[configurator] object StreamRoute {
                                 executionContext: ExecutionContext): HookOfAction =
     (key: ObjectKey, _, _) =>
       store.value[StreamClusterInfo](key).flatMap { data =>
-        assertParameters(data)
         // we assume streamApp has following conditions:
         // 1) use any available node of worker cluster to run streamApp
         // 2) use one from/to pair topic (multiple from/to topics will need to discuss flow)
@@ -279,50 +284,51 @@ private[configurator] object StreamRoute {
         CollieUtils
           .both(Some(data.jarKey.group()))
           // get broker props from worker cluster
-          .map { case (_, topicAdmin, _, _) => topicAdmin.connectionProps }
-          .flatMap { bkProps =>
-            fileStore.fileInfo(data.jarKey).map(_.url).flatMap { url =>
-              nodeCollie
-                .nodes()
-                .map { all =>
-                  if (CommonUtils.isEmpty(data.nodeNames.asJava)) {
-                    // Check instance first
-                    // Here we will check the following conditions:
-                    // 1. instance should be positive
-                    // 2. available nodes should be bigger than instance (one node runs one instance)
-                    if (all.size < data.instances)
-                      throw new IllegalArgumentException(
-                        s"cannot run streamApp. expect: ${data.instances}, actual: ${all.size}")
-                    Random.shuffle(all).take(CommonUtils.requirePositiveInt(data.instances)).toSet
-                  } else
-                    // if require node name is not in nodeCollie, do not take that node
-                    CommonUtils.requireNonEmpty(all.filter(n => data.nodeNames.contains(n.name)).asJava).asScala.toSet
-                }
-                .flatMap(
-                  nodes =>
-                    clusterCollie.streamCollie.creator
-                      .clusterName(data.name)
-                      .nodeNames(nodes.map(_.name))
-                      .imageName(IMAGE_NAME_DEFAULT)
-                      .jarUrl(url.toString)
-                      // these settings will send to container environment
-                      // we convert all value to string for convenient
-                      .settings(data.settings.map {
-                        case (k, v) =>
-                          k -> (v match {
-                            case JsString(value) => value
-                            case JsArray(arr)    => arr.mkString(",")
-                            case _               => v.toString()
-                          })
-                      } + (DefaultConfigs.BROKER_DEFINITION.key() -> bkProps)
-                        + (DefaultConfigs.EXACTLY_ONCE_DEFINITION.key() -> data.exactlyOnce.toString))
-                      .threadPool(executionContext)
-                      .create())
-            }
+          .flatMap {
+            case (_, topicAdmin, _, _) => topicAdmin.topics().map(topics => (topicAdmin.connectionProps, topics))
           }
-          .recover {
-            case ex: Throwable =>
-              log.error(s"start streamApp failed: ", ex)
+          .flatMap {
+            case (bkProps, topicInfos) =>
+              fileStore.fileInfo(data.jarKey).map(_.url).flatMap { url =>
+                // check the require fields
+                assertParameters(data, topicInfos)
+                nodeCollie
+                  .nodes()
+                  .map { all =>
+                    if (CommonUtils.isEmpty(data.nodeNames.asJava)) {
+                      // Check instance first
+                      // Here we will check the following conditions:
+                      // 1. instance should be positive
+                      // 2. available nodes should be bigger than instance (one node runs one instance)
+                      if (all.size < data.instances)
+                        throw new IllegalArgumentException(
+                          s"cannot run streamApp. expect: ${data.instances}, actual: ${all.size}")
+                      Random.shuffle(all).take(CommonUtils.requirePositiveInt(data.instances)).toSet
+                    } else
+                      // if require node name is not in nodeCollie, do not take that node
+                      CommonUtils.requireNonEmpty(all.filter(n => data.nodeNames.contains(n.name)).asJava).asScala.toSet
+                  }
+                  .flatMap(
+                    nodes =>
+                      clusterCollie.streamCollie.creator
+                        .clusterName(data.name)
+                        .nodeNames(nodes.map(_.name))
+                        .imageName(IMAGE_NAME_DEFAULT)
+                        .jarUrl(url.toString)
+                        // these settings will send to container environment
+                        // we convert all value to string for convenient
+                        .settings(data.settings.map {
+                          case (k, v) =>
+                            k -> (v match {
+                              case JsString(value) => value
+                              case JsArray(arr)    => arr.mkString(",")
+                              case _               => v.toString()
+                            })
+                        } + (DefaultConfigs.BROKER_DEFINITION.key() -> bkProps)
+                          + (DefaultConfigs.EXACTLY_ONCE_DEFINITION.key() -> data.exactlyOnce.toString))
+                        .threadPool(executionContext)
+                        .create())
+              }
           }
           .map(_ => Unit)
     }
