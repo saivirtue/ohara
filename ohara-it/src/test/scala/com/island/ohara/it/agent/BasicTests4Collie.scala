@@ -156,7 +156,7 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
   /**
     * used to debug...
     */
-  protected val cleanup: Boolean = true
+  protected val cleanup: Boolean = false
 
   protected def generateClusterName(): String
 
