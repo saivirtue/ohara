@@ -56,6 +56,8 @@ object WorkerRoute {
                     state = finalData.state,
                     nodeNames = finalData.nodeNames,
                     deadNodes = finalData.deadNodes,
+                    // the connector list is get by REST, we should update it again
+                    connectors = finalData.connectors
                 )
               )
           }
