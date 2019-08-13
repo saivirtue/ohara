@@ -153,6 +153,14 @@ private[configurator] object StreamRoute {
     CommonUtils.requireNonEmpty(data.name, () => "name fail assert")
     CommonUtils.requireConnectionPort(data.jmxPort)
     Objects.requireNonNull(data.jarKey)
+
+    // check the from/to topic size equals one
+    // TODO: this is a workaround to avoid input multiple topics
+    // TODO: please refactor this after the single from/to topic issue resolved...by Sam
+    if (data.from.size > 1 || data.to.size > 1)
+      throw new IllegalArgumentException(
+        s"We don't allow multiple topics of from/to field, actual: from[${data.from}], to[${data.to}]")
+
     // from topic should be defined and starting
     val fromTopics = CommonUtils.requireNonEmpty(data.from.asJava, () => "from topic fail assert")
     if (!topicInfos.exists(t => fromTopics.contains(t.name)))
