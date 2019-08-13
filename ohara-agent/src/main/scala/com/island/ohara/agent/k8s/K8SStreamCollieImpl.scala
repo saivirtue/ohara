@@ -16,6 +16,8 @@
 
 package com.island.ohara.agent.k8s
 
+import java.net.URL
+
 import com.island.ohara.agent.{NodeCollie, StreamCollie}
 import com.island.ohara.client.configurator.v0.ContainerApi.ContainerInfo
 import com.island.ohara.client.configurator.v0.NodeApi.Node
@@ -36,7 +38,7 @@ private class K8SStreamCollieImpl(node: NodeCollie, k8sClient: K8SClient)
                                    node: Node,
                                    route: Map[String, String],
                                    jmxPort: Int,
-                                   jarUrl: String): Future[Unit] = {
+                                   jarUrl: URL): Future[Unit] = {
     implicit val exec: ExecutionContext = executionContext
     k8sClient
       .containerCreator()
@@ -50,7 +52,8 @@ private class K8SStreamCollieImpl(node: NodeCollie, k8sClient: K8SClient)
       .routes(route)
       .envs(containerInfo.environments)
       .args(StreamCollie.formatJMXProperties(node.name, jmxPort) ++
-        Seq(StreamCollie.MAIN_ENTRY, s"""${DefaultConfigs.JAR_KEY_DEFINITION.key()}="$jarUrl""""))
+        Seq(StreamCollie.MAIN_ENTRY,
+            s"""${DefaultConfigs.JAR_KEY_DEFINITION.key()}=${StreamCollie.urlEncode(jarUrl)}"""))
       .threadPool(executionContext)
       .create()
       .recover {

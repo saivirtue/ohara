@@ -16,6 +16,8 @@
 
 package com.island.ohara.agent.ssh
 
+import java.net.URL
+
 import com.island.ohara.agent.{ClusterCache, NodeCollie, StreamCollie}
 import com.island.ohara.client.configurator.v0.ClusterInfo
 import com.island.ohara.client.configurator.v0.ContainerApi.ContainerInfo
@@ -34,14 +36,14 @@ private class StreamCollieImpl(node: NodeCollie, dockerCache: DockerClientCache,
                                    node: Node,
                                    route: Map[String, String],
                                    jmxPort: Int,
-                                   jarUrl: String): Future[Unit] =
+                                   jarUrl: URL): Future[Unit] =
     Future.successful(try {
       dockerCache.exec(
         node,
         _.containerCreator()
           .imageName(containerInfo.imageName)
           .hostname(containerInfo.name)
-          .envs(containerInfo.environments)
+          .envs(escapeQuote(containerInfo.environments))
           .name(containerInfo.name)
           .portMappings(
             containerInfo.portMappings.flatMap(_.portPairs).map(pair => pair.hostPort -> pair.containerPort).toMap)
@@ -50,7 +52,7 @@ private class StreamCollieImpl(node: NodeCollie, dockerCache: DockerClientCache,
             " ",
             StreamCollie.formatJMXProperties(node.name, jmxPort).mkString(" "),
             StreamCollie.MAIN_ENTRY,
-            s"""${DefaultConfigs.JAR_KEY_DEFINITION.key()}="$jarUrl""""
+            s"""${DefaultConfigs.JAR_KEY_DEFINITION.key()}=${StreamCollie.urlEncode(jarUrl)}"""
           ))
           .create()
       )
@@ -80,4 +82,14 @@ private class StreamCollieImpl(node: NodeCollie, dockerCache: DockerClientCache,
 
   override protected def nodeCollie: NodeCollie = node
   override protected def prefixKey: String = PREFIX_KEY
+
+  /**
+    * Since docker will "swallow" quote of environment variable in container
+    * We need to escape the special quote (like json string) here.
+    * @param envs environment
+    * @return the escape environment
+    */
+  private[this] def escapeQuote(envs: Map[String, String]): Map[String, String] = {
+    envs.map { case (k, v) => (k, v.replaceAll("\"", "\\\\\"")) }
+  }
 }

@@ -309,7 +309,7 @@ private[configurator] object StreamRoute {
                       .clusterName(data.name)
                       .nodeNames(nodes.map(_.name))
                       .imageName(IMAGE_NAME_DEFAULT)
-                      .jarUrl(url.toString)
+                      .jarUrl(url)
                       .jmxPort(data.settings(DefaultConfigs.JMX_PORT_DEFINITION.key()).convertTo[Int])
                       // these settings will send to container environment
                       // we convert all value to string for convenient

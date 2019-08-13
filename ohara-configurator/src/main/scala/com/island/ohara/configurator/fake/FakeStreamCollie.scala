@@ -16,6 +16,8 @@
 
 package com.island.ohara.configurator.fake
 
+import java.net.URL
+
 import com.island.ohara.agent.{ClusterState, NodeCollie, StreamCollie}
 import com.island.ohara.client.configurator.v0.ContainerApi.ContainerInfo
 import com.island.ohara.client.configurator.v0.MetricsApi.Metrics
@@ -84,7 +86,7 @@ private[configurator] class FakeStreamCollie(node: NodeCollie)
                                    node: Node,
                                    route: Map[String, String],
                                    jmxPort: Int,
-                                   jarUrl: String): Future[Unit] =
+                                   jarUrl: URL): Future[Unit] =
     throw new UnsupportedOperationException("stream collie doesn't support to doCreator function")
 
   override protected def nodeCollie: NodeCollie = node

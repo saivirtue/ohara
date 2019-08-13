@@ -42,12 +42,12 @@ class TestStreamCreator extends SmallTest with Matchers {
       CommonUtils.requireNonEmpty(clusterName)
       CommonUtils.requireNonEmpty(nodeNames.asJava)
       CommonUtils.requireNonEmpty(imageName)
-      CommonUtils.requireNonEmpty(jarUrl)
+      Objects.requireNonNull(jarUrl)
       CommonUtils.requireConnectionPort(jmxPort)
       Objects.requireNonNull(settings)
       Objects.requireNonNull(executionContext)
       Future.successful {
-        val jarKey = StreamCollie.urlToDataKey(jarUrl)
+        val jarKey = StreamCollie.urlToDataKey(jarUrl.toString)
         StreamClusterInfo(
           settings = Map(
             DefaultConfigs.NAME_DEFINITION.key() -> JsString(clusterName),
@@ -113,11 +113,6 @@ class TestStreamCreator extends SmallTest with Matchers {
   }
 
   @Test
-  def emptyJarUrl(): Unit = {
-    an[IllegalArgumentException] should be thrownBy streamCreator().jarUrl("")
-  }
-
-  @Test
   def zeroJmxPort(): Unit = {
     an[IllegalArgumentException] should be thrownBy streamCreator().jmxPort(0)
   }
@@ -135,7 +130,7 @@ class TestStreamCreator extends SmallTest with Matchers {
     streamCreator()
       .clusterName(CommonUtils.randomString(StreamApi.LIMIT_OF_NAME_LENGTH))
       .imageName(CommonUtils.randomString())
-      .jarUrl("http://abc/jar")
+      .jarUrl(new URL("http://abc/jar"))
       .settings(
         Map(
           DefaultConfigs.FROM_TOPICS_DEFINITION.key() -> "from",
@@ -147,7 +142,7 @@ class TestStreamCreator extends SmallTest with Matchers {
     an[DeserializationException] should be thrownBy streamCreator()
       .clusterName(CommonUtils.randomString(StreamApi.LIMIT_OF_NAME_LENGTH + 1))
       .imageName(CommonUtils.randomString())
-      .jarUrl("jar")
+      .jarUrl(new URL("http://abc/jar"))
       .nodeNames(Set("bar", "foo", "bez"))
       .create()
   }
@@ -185,7 +180,7 @@ class TestStreamCreator extends SmallTest with Matchers {
       streamCreator()
         .clusterName(CommonUtils.randomString(StreamApi.LIMIT_OF_NAME_LENGTH))
         .imageName(CommonUtils.randomString())
-        .jarUrl("http://abc/jar")
+        .jarUrl(new URL("http://abc/jar"))
         .settings(Map(
           DefaultConfigs.FROM_TOPICS_DEFINITION.key() -> "from",
           DefaultConfigs.TO_TOPICS_DEFINITION.key() -> "to"
@@ -209,9 +204,12 @@ class TestStreamCreator extends SmallTest with Matchers {
             DefaultConfigs.FROM_TOPICS_DEFINITION.key() -> "from",
             DefaultConfigs.TO_TOPICS_DEFINITION.key() -> "to"
           ))
-        .jarUrl(url.toString)
+        .jarUrl(url)
         .create())
     res.jarKey.group() shouldBe "group"
     res.jarKey.name() shouldBe "abc.jar"
   }
+
+  @Test
+  def testParseUrl(): Unit = StreamCollie.urlEncode(new URL("http://abc/def/my bar/foo fake.jar"))
 }

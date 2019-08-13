@@ -63,7 +63,7 @@ trait StreamCollie extends Collie[StreamClusterInfo, StreamCollie.ClusterCreator
                   node.hostname -> CommonUtils.address(node.hostname)
                 }.toMap +
                   // make sure the streamApp can connect to configurator
-                  (urlToHost(jarUrl) -> CommonUtils.address(urlToHost(jarUrl)))
+                  (urlToHost(jarUrl.toString) -> CommonUtils.address(urlToHost(jarUrl.toString)))
                 // ssh connection is slow so we submit request by multi-thread
                 Future
                   .sequence(nodes.map {
@@ -100,7 +100,7 @@ trait StreamCollie extends Collie[StreamClusterInfo, StreamCollie.ClusterCreator
                     successfulContainers =>
                       if (successfulContainers.isEmpty)
                         throw new IllegalArgumentException(s"failed to create $clusterName on $serviceName")
-                      val jarKey = StreamCollie.urlToDataKey(jarUrl)
+                      val jarKey = StreamCollie.urlToDataKey(jarUrl.toString)
                       val clusterInfo = StreamClusterInfo(
                         settings = Map(
                           DefaultConfigs.NAME_DEFINITION.key() -> JsString(clusterName),
@@ -158,8 +158,8 @@ trait StreamCollie extends Collie[StreamClusterInfo, StreamCollie.ClusterCreator
       import sys.process._
       val classpath = System.getProperty("java.class.path")
       val command =
-        s"""java -cp "$classpath" ${StreamCollie.MAIN_ENTRY} ${DefaultConfigs.JAR_KEY_DEFINITION
-          .key()}="${jarUrl.toString}" ${StreamCollie.CONFIG_KEY}"""
+        s"""java -cp "$classpath" ${StreamCollie.MAIN_ENTRY} ${DefaultConfigs.JAR_KEY_DEFINITION.key()}=${StreamCollie
+          .urlEncode(jarUrl)} ${StreamCollie.CONFIG_KEY}"""
       try {
         val result = command.!!
         Some(Definition(result.split("=")(0), StreamDefinitions.ofJson(result.split("=")(1)).values().asScala))
@@ -237,7 +237,7 @@ trait StreamCollie extends Collie[StreamClusterInfo, StreamCollie.ClusterCreator
                           node: Node,
                           route: Map[String, String],
                           jmxPort: Int,
-                          jarUrl: String): Future[Unit]
+                          jarUrl: URL): Future[Unit]
 
   protected def postCreateCluster(clusterInfo: ClusterInfo, successfulContainers: Seq[ContainerInfo]): Unit = {
     //Default do nothing
@@ -246,7 +246,7 @@ trait StreamCollie extends Collie[StreamClusterInfo, StreamCollie.ClusterCreator
 
 object StreamCollie {
   trait ClusterCreator extends Collie.ClusterCreator[StreamClusterInfo] {
-    private[this] var jarUrl: String = _
+    private[this] var jarUrl: URL = _
     private[this] var jmxPort: Int = CommonUtils.availablePort()
     private[this] var settings: Map[String, String] = Map.empty
 
@@ -263,8 +263,8 @@ object StreamCollie {
       * @param jarUrl jar url
       * @return this creator
       */
-    def jarUrl(jarUrl: String): ClusterCreator = {
-      this.jarUrl = CommonUtils.requireNonEmpty(jarUrl)
+    def jarUrl(jarUrl: URL): ClusterCreator = {
+      this.jarUrl = Objects.requireNonNull(jarUrl)
       this
     }
 
@@ -296,7 +296,7 @@ object StreamCollie {
       CommonUtils.requireNonEmpty(clusterName),
       CommonUtils.requireNonEmpty(nodeNames.asJava).asScala.toSet,
       CommonUtils.requireNonEmpty(imageName),
-      CommonUtils.requireNonEmpty(jarUrl),
+      Objects.requireNonNull(jarUrl),
       CommonUtils.requireConnectionPort(jmxPort),
       Objects.requireNonNull(settings),
       Objects.requireNonNull(executionContext)
@@ -310,7 +310,7 @@ object StreamCollie {
     protected def doCreate(clusterName: String,
                            nodeNames: Set[String],
                            imageName: String,
-                           jarUrl: String,
+                           jarUrl: URL,
                            jmxPort: Int,
                            settings: Map[String, String],
                            executionContext: ExecutionContext): Future[StreamClusterInfo]
@@ -355,4 +355,19 @@ object StreamCollie {
     val group = jarUrl.split("\\/").init.last
     ObjectKey.of(group, name)
   }
+
+  /**
+    * A convenience way to convert an url to true "encode" string and could pass it to server property.
+    * see https://stackoverflow.com/a/4571518 for more details
+    * @param jarUrl the url
+    * @return encode string
+    */
+  private[agent] def urlEncode(jarUrl: URL): String =
+    new URI(jarUrl.getProtocol,
+            jarUrl.getUserInfo,
+            jarUrl.getHost,
+            jarUrl.getPort,
+            jarUrl.getPath,
+            jarUrl.getQuery,
+            jarUrl.getRef).toASCIIString
 }
