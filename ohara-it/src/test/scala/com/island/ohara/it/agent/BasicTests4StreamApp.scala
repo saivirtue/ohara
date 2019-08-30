@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutionException
 
 import com.island.ohara.agent.ClusterState
 import com.island.ohara.agent.docker.DockerClient
+import com.island.ohara.client.configurator.v0.DefinitionApi.ServiceType
 import com.island.ohara.client.configurator.v0.NodeApi.Node
 import com.island.ohara.client.configurator.v0.{ZookeeperApi, _}
 import com.island.ohara.common.data.{Row, Serializer}
@@ -249,11 +250,22 @@ abstract class BasicTests4StreamApp extends IntegrationTest with Matchers {
     val from = TopicKey.of("default", "fromTopic")
     val to = TopicKey.of("default", "toTopic")
     val jar = new File(CommonUtils.path(System.getProperty("user.dir"), "build", "libs", "ohara-streamapp.jar"))
+    // upload streamApp jar
+    val jarInfo = result(jarApi.request.file(jar).upload())
+    jarInfo.name shouldBe "ohara-streamapp.jar"
 
+    val definition = result(
+      DefinitionApi.access
+        .hostname(configurator.hostname)
+        .port(configurator.port)
+        .request
+        .imageName(StreamApi.IMAGE_NAME_DEFAULT)
+        .serviceType(ServiceType.Stream)
+        .jarInfo(jarInfo)
+        .fetch())
     // jar should be parse-able
-    val definition = result(configurator.clusterCollie.streamCollie.loadDefinition(jar.toURI.toURL))
-    definition.isDefined shouldBe true
-    definition.get.className shouldBe "com.island.ohara.it.streamapp.DumbStreamApp"
+    definition.className shouldBe "com.island.ohara.it.streamapp.DumbStreamApp"
+    definition.definitions().isEmpty should not be true
 
     // we make sure the broker cluster exists again (for create topic)
     assertCluster(() => result(bkApi.list()),
@@ -264,10 +276,6 @@ abstract class BasicTests4StreamApp extends IntegrationTest with Matchers {
     result(topicApi.start(topic1.key))
     val topic2 = result(topicApi.request.key(to).brokerClusterName(bkName).create())
     result(topicApi.start(topic2.key))
-
-    // upload streamApp jar
-    val jarInfo = result(jarApi.request.file(jar).upload())
-    jarInfo.name shouldBe "ohara-streamapp.jar"
 
     // create streamApp properties
     val stream = result(

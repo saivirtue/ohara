@@ -16,21 +16,21 @@
 
 package com.island.ohara.configurator.fake
 
-import java.net.URL
-
 import com.island.ohara.agent.{ClusterState, NodeCollie, StreamCollie}
 import com.island.ohara.client.configurator.v0.ContainerApi.ContainerInfo
+import com.island.ohara.client.configurator.v0.DefinitionApi.Params
 import com.island.ohara.client.configurator.v0.FileInfoApi.FileInfo
 import com.island.ohara.client.configurator.v0.MetricsApi.Metrics
 import com.island.ohara.client.configurator.v0.NodeApi.Node
+import com.island.ohara.client.configurator.v0.StreamApi
 import com.island.ohara.client.configurator.v0.StreamApi.StreamClusterInfo
-import com.island.ohara.client.configurator.v0.{Definition, StreamApi}
+import com.island.ohara.common.setting.Definition
 import com.island.ohara.common.util.CommonUtils
 import com.island.ohara.configurator.route.StreamRoute
 import com.island.ohara.metrics.basic.{Counter, CounterMBean}
+import com.island.ohara.streams.StreamApp
 import com.island.ohara.streams.config.StreamDefUtils
 
-import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
 private[configurator] class FakeStreamCollie(node: NodeCollie)
@@ -54,7 +54,6 @@ private[configurator] class FakeStreamCollie(node: NodeCollie)
           StreamApi.StreamClusterInfo(
             settings = settings,
             // convert to list in order to be serializable
-            definition = Some(Definition("fake_class", StreamDefUtils.DEFAULT.asScala.toList)),
             nodeNames = nodeNames,
             deadNodes = Set.empty,
             // In fake mode, we need to assign a state in creation for "GET" method to act like real case
@@ -87,21 +86,27 @@ private[configurator] class FakeStreamCollie(node: NodeCollie)
 
   override protected def prefixKey: String = "fakestream"
 
-  /**
-    * in fake mode, we never return empty result or exception.
-    *
-    * @param jarUrl the custom streamApp jar url
-    * @param executionContext thread pool
-    * @return stream definition
-    */
-  override def loadDefinition(jarUrl: URL)(implicit executionContext: ExecutionContext): Future[Option[Definition]] =
-    super
-      .loadDefinition(jarUrl)
-      .recover {
+  // in fake mode, we never return empty result or exception.
+  override def fetchDefinitions(params: Params)(implicit executionContext: ExecutionContext,
+                                                nodeCollie: NodeCollie): Future[Definition] =
+    Future.successful {
+      try {
+        import sys.process._
+        val classpath = System.getProperty("java.class.path")
+        val command =
+          s"""java -cp "$classpath" ${StreamCollie.MAIN_ENTRY} ${StreamDefUtils.JAR_URL_DEFINITION.key()}="${params.jarInfo.fold(
+            throw new Exception("jar is empty"))(_.url.toURI.toASCIIString)}" ${StreamApp.DEFINITION_COMMAND}"""
+        val result = command.!!
+        Definition.ofJson(result)
+      } catch {
         case _: Throwable =>
-          Some(Definition("fake_class", StreamDefUtils.DEFAULT.asScala.toList)) // a serializable collection
+          Definition.of("fake_class", StreamDefUtils.DEFAULT) // a serializable collection
       }
-      .map(_.orElse(Some(Definition("fake_class", StreamDefUtils.DEFAULT.asScala.toList)))) // a serializable collection
+    }
+
+  override protected def doRunContainer(node: Node, containerInfo: ContainerInfo, commands: Seq[String])(
+    implicit executionContext: ExecutionContext): Future[Option[String]] =
+    throw new UnsupportedOperationException
 
   override protected def brokerContainers(clusterName: String)(
     implicit executionContext: ExecutionContext): Future[Seq[ContainerInfo]] =

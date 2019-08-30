@@ -20,11 +20,13 @@ import java.util.Objects
 import com.island.ohara.agent.docker.ContainerState
 import com.island.ohara.client.configurator.v0.BrokerApi.BrokerClusterInfo
 import com.island.ohara.client.configurator.v0.ContainerApi.{ContainerInfo, PortMapping, PortPair}
+import com.island.ohara.client.configurator.v0.DefinitionApi.Params
 import com.island.ohara.client.configurator.v0.NodeApi.Node
 import com.island.ohara.client.configurator.v0.ZookeeperApi.ZookeeperClusterInfo
 import com.island.ohara.client.configurator.v0.{BrokerApi, ClusterInfo, TopicApi}
 import com.island.ohara.client.kafka.TopicAdmin
 import com.island.ohara.common.annotations.Optional
+import com.island.ohara.common.setting.Definition
 import com.island.ohara.common.util.CommonUtils
 import com.island.ohara.metrics.BeanChannel
 import com.island.ohara.metrics.kafka.TopicMeter
@@ -319,6 +321,10 @@ trait BrokerCollie extends Collie[BrokerClusterInfo] {
   protected def hookOfNewRoute(node: Node, container: ContainerInfo, route: Map[String, String]): Unit = {
     //Nothing
   }
+
+  override def fetchDefinitions(params: Params)(implicit executionContext: ExecutionContext,
+                                                nodeCollie: NodeCollie): Future[Definition] =
+    throw new UnsupportedOperationException("Will be implemented in #2191")
 }
 
 object BrokerCollie {

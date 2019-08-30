@@ -22,9 +22,9 @@ import java.util.Objects
 import com.island.ohara.client.configurator.v0.FileInfoApi.FileInfo
 import com.island.ohara.client.configurator.v0.MetricsApi.Metrics
 import com.island.ohara.client.configurator.v0.StreamApi.StreamClusterInfo
-import com.island.ohara.client.configurator.v0.{Definition, FileInfoApi, StreamApi, TopicApi}
+import com.island.ohara.client.configurator.v0.{FileInfoApi, StreamApi, TopicApi}
 import com.island.ohara.common.rule.SmallTest
-import com.island.ohara.common.setting.{SettingDef, TopicKey}
+import com.island.ohara.common.setting.TopicKey
 import com.island.ohara.common.util.CommonUtils
 import com.island.ohara.streams.config.StreamDefUtils
 import org.junit.Test
@@ -65,7 +65,6 @@ class TestStreamCreator extends SmallTest with Matchers {
       Future.successful {
         StreamClusterInfo(
           settings = settings,
-          definition = None,
           nodeNames = nodeNames,
           deadNodes = Set.empty,
           metrics = Metrics.EMPTY,
@@ -169,7 +168,6 @@ class TestStreamCreator extends SmallTest with Matchers {
         StreamDefUtils.TAGS_DEFINITION.key() -> JsObject(Map("bar" -> JsString("foo"), "he" -> JsNumber(1))),
         StreamDefUtils.JAR_INFO_DEFINITION.key() -> FileInfoApi.FILE_INFO_JSON_FORMAT.write(fileInfo)
       ),
-      definition = Some(Definition("className", Seq(SettingDef.builder().key("key").group("group").build()))),
       nodeNames = Set("node1"),
       deadNodes = Set.empty,
       state = None,

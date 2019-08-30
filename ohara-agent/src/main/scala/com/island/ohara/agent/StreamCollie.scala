@@ -16,35 +16,35 @@
 
 package com.island.ohara.agent
 
-import java.net.URL
 import java.util.Objects
 
 import com.island.ohara.agent.docker.ContainerState
 import com.island.ohara.client.configurator.v0.ContainerApi.{ContainerInfo, PortMapping, PortPair}
+import com.island.ohara.client.configurator.v0.DefinitionApi.Params
 import com.island.ohara.client.configurator.v0.FileInfoApi.{FILE_INFO_JSON_FORMAT, FileInfo}
 import com.island.ohara.client.configurator.v0.MetricsApi.Metrics
 import com.island.ohara.client.configurator.v0.NodeApi.Node
 import com.island.ohara.client.configurator.v0.StreamApi.StreamClusterInfo
-import com.island.ohara.client.configurator.v0.{ClusterInfo, Definition, StreamApi}
+import com.island.ohara.client.configurator.v0.{ClusterInfo, DefinitionApi, StreamApi}
 import com.island.ohara.common.annotations.Optional
-import com.island.ohara.common.setting.{ObjectKey, TopicKey}
+import com.island.ohara.common.setting.{Definition, ObjectKey, TopicKey}
 import com.island.ohara.common.util.CommonUtils
 import com.island.ohara.metrics.BeanChannel
 import com.island.ohara.metrics.basic.CounterMBean
+import com.island.ohara.streams.StreamApp
 import com.island.ohara.streams.config.StreamDefUtils
-import com.typesafe.scalalogging.Logger
 import spray.json._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Random
 
 /**
   * An interface of controlling stream cluster.
   * It isolates the implementation of container manager from Configurator.
   */
 trait StreamCollie extends Collie[StreamClusterInfo] {
-  private[this] val LOG = Logger(classOf[StreamCollie])
 
   override def creator: StreamCollie.ClusterCreator =
     (clusterName, nodeNames, imageName, brokerClusterName, jarInfo, jmxPort, _, _, settings, executionContext) => {
@@ -110,17 +110,14 @@ trait StreamCollie extends Collie[StreamClusterInfo] {
                         Some(containerInfo))
                   })
                   .map(_.flatten.toSeq)
-                  .flatMap(cs => loadDefinition(jarInfo.url).map(definition => cs -> definition))
                   .map {
-                    case (successfulContainers, definition) =>
+                    successfulContainers =>
                       if (successfulContainers.isEmpty)
                         throw new IllegalArgumentException(s"failed to create $clusterName on $serviceName")
                       val clusterInfo = StreamClusterInfo(
                         // the other arguments (clusterName, imageName and so on) are extracted from settings so
                         // we don't need to add them back to settings.
                         settings = settings,
-                        // TODO: cluster info
-                        definition = definition,
                         nodeNames = successfulContainers.map(_.nodeName).toSet,
                         deadNodes = Set.empty,
                         metrics = Metrics.EMPTY,
@@ -145,48 +142,51 @@ trait StreamCollie extends Collie[StreamClusterInfo] {
     BeanChannel.builder().hostname(node).port(cluster.jmxPort).build().counterMBeans().asScala
   }.toSeq
 
-  /**
-    *
-    * @return async future containing configs
-    */
-  /**
-    * Get all '''SettingDef''' of current streamApp.
-    * Note: This method intends to call a method that invokes the reflection method of streamApp.
-    *
-    * @param jarUrl the custom streamApp jar url
-    * @return stream definition
-    */
-  //TODO : this workaround should be removed and use a new API instead in #2191...by Sam
-  def loadDefinition(jarUrl: URL)(implicit executionContext: ExecutionContext): Future[Option[Definition]] =
-    Future {
-      import sys.process._
-      val classpath = System.getProperty("java.class.path")
-      val command =
-        s"""java -cp "$classpath" ${StreamCollie.MAIN_ENTRY} ${StreamDefUtils.JAR_URL_DEFINITION
-          .key()}=${jarUrl.toString} ${StreamCollie.CONFIG_KEY}"""
-      val result = command.!!
-      val className = result.split("=")(0)
-      Some(Definition(className, StreamDefUtils.ofJson(result.split("=")(1)).values.asScala))
-    }.recover {
-      case e: RuntimeException =>
-        // We cannot parse the provided jar, return nothing and log it
-        LOG.warn(s"the provided jar url: [$jarUrl] could not be parsed, return default settings only.", e)
-        None
+  override def fetchDefinitions(params: Params)(implicit executionContext: ExecutionContext,
+                                                nodeCollie: NodeCollie): Future[Definition] = {
+    // We only need to run the container for fetching definition
+    // It is ok to get a random node here
+    nodeCollie.nodes().map(nodes => Random.shuffle(nodes).headOption).flatMap { nodeOption =>
+      nodeOption
+        .fold(throw new RuntimeException("The node list is empty, we cannot fetch definition from container")) { node =>
+          val containerName = CommonUtils.randomString()
+          val containerInfo = ContainerInfo(
+            nodeName = node.name,
+            id = Collie.UNKNOWN,
+            imageName = params.imageName,
+            created = Collie.UNKNOWN,
+            state = Collie.UNKNOWN,
+            kind = Collie.UNKNOWN,
+            name = containerName,
+            size = Collie.UNKNOWN,
+            portMappings = Seq.empty,
+            environments = Map.empty,
+            hostname = containerName
+          )
+          doRunContainer(
+            node,
+            containerInfo,
+            Seq(
+              params.jarInfo.fold(throw new RuntimeException("jar is empty"))(jar =>
+                s"""${StreamDefUtils.JAR_URL_DEFINITION.key()}="${jar.url.toURI.toASCIIString}""""),
+              StreamApp.DEFINITION_COMMAND
+            )
+          )
+        }
+        .map(_.fold(throw new RuntimeException("console output is empty"))(json =>
+          DefinitionApi.DEFINITION_JSON_FORMAT.read(JsString(json))))
     }
+  }
 
-  private[agent] def toStreamCluster(clusterName: String, containers: Seq[ContainerInfo])(
-    implicit executionContext: ExecutionContext): Future[StreamClusterInfo] = {
+  private[agent] def toStreamCluster(clusterName: String, containers: Seq[ContainerInfo]): Future[StreamClusterInfo] = {
     // get the first running container, or first non-running container if not found
     val first = containers.find(_.state == ContainerState.RUNNING.name).getOrElse(containers.head)
     val settings = seekSettings(first.environments)
     // reuse the parser from Creation
     val nodeNames = StreamApi.Creation(settings).nodeNames
-    val jarInfo = FILE_INFO_JSON_FORMAT.read(settings(StreamDefUtils.JAR_INFO_DEFINITION.key()))
-    loadDefinition(jarInfo.url).map { definition =>
+    Future.successful(
       StreamClusterInfo(
         settings = settings,
-        // we don't care the runtime definitions; it's saved to store already
-        definition = definition,
         nodeNames = nodeNames,
         // Currently, docker and k8s has same naming rule for "Running",
         // it is ok that we use the containerState.RUNNING here.
@@ -195,8 +195,7 @@ trait StreamCollie extends Collie[StreamClusterInfo] {
         state = toClusterState(containers).map(_.name),
         error = None,
         lastModified = CommonUtils.current()
-      )
-    }
+      ))
   }
 
   /**
@@ -224,6 +223,18 @@ trait StreamCollie extends Collie[StreamClusterInfo] {
   protected def postCreateCluster(clusterInfo: ClusterInfo, successfulContainers: Seq[ContainerInfo]): Unit = {
     //Default do nothing
   }
+
+  /**
+    * Run a container by required information and get the output string.
+    * Note: the container will be removed after it finished the command
+    *
+    * @param executionContext execution context
+    * @param containerInfo container info
+    * @param commands running commands
+    * @return output string if existed
+    */
+  protected def doRunContainer(node: Node, containerInfo: ContainerInfo, commands: Seq[String])(
+    implicit executionContext: ExecutionContext): Future[Option[String]]
 
   /**
     * get the containers for specific broker cluster. This method is used to update the route.
@@ -324,8 +335,8 @@ object StreamCollie {
     private[this] def get[T](key: String, f: JsValue => T): T =
       settings.get(key).map(f).getOrElse(throw new NoSuchElementException(s"$key is required"))
 
-    import com.island.ohara.client.configurator.v0.TOPIC_KEY_FORMAT
     import com.island.ohara.client.configurator.v0.FileInfoApi.FILE_INFO_JSON_FORMAT
+    import com.island.ohara.client.configurator.v0.TOPIC_KEY_FORMAT
     import spray.json.DefaultJsonProtocol._
     override def create(): Future[StreamClusterInfo] = doCreate(
       clusterName = get(StreamDefUtils.NAME_DEFINITION.key(), _.convertTo[String]),
@@ -373,11 +384,6 @@ object StreamCollie {
     * the only entry for ohara streamApp
     */
   val MAIN_ENTRY = "com.island.ohara.streams.StreamApp"
-
-  /**
-    * the flag to get/set streamApp configs for container
-    */
-  private[agent] val CONFIG_KEY = "CONFIG_KEY"
 
   /**
     * generate the jmx required properties

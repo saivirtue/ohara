@@ -39,6 +39,9 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class StreamApp {
 
+  /** This is a special key that will be passed to container for getting definition */
+  public static final String DEFINITION_COMMAND = "-definition";
+
   private static final Logger log = LoggerFactory.getLogger(StreamApp.class);
 
   // We set timeout to 30 seconds
@@ -175,8 +178,10 @@ public abstract class StreamApp {
   }
 
   /**
-   * Put the arguments into properties object with format: (String, String) For Example, "arg1=abc
-   * arg2" will be transformed to ("arg1", "abc") and ("arg2", null)
+   * Put the arguments into properties object with format: (String, String)
+   *
+   * <p>For Example, "arg1=abc arg2 -arg3" will be transformed to ("arg1", "abc"), ("arg2", "") and
+   * ("arg3","")
    *
    * @param args argument list
    * @return properties
@@ -184,7 +189,7 @@ public abstract class StreamApp {
   private static Properties loadArgs(String[] args) {
     Properties properties = new Properties();
     for (String arg : args) {
-      if (!Character.isLetter(arg.charAt(0))) {
+      if (!Character.isLetter(arg.charAt(0)) && arg.charAt(0) != '-') {
         log.warn(String.format("We cannot handle the argument: [%s], so we skip it", arg));
         continue;
       }

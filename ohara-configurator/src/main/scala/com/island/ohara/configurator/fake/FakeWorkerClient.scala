@@ -20,7 +20,6 @@ import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
 import com.island.ohara.client.configurator.v0.ConnectorApi.ConnectorState
-import com.island.ohara.client.configurator.v0.Definition
 import com.island.ohara.client.kafka.WorkerClient
 import com.island.ohara.client.kafka.WorkerClient.Validator
 import com.island.ohara.client.kafka.WorkerJson.{
@@ -31,7 +30,7 @@ import com.island.ohara.client.kafka.WorkerJson.{
   Plugin,
   TaskStatus
 }
-import com.island.ohara.common.setting.ConnectorKey
+import com.island.ohara.common.setting.{ConnectorKey, Definition}
 import com.island.ohara.kafka.connector.json._
 import com.island.ohara.kafka.connector.{RowSinkConnector, RowSourceConnector}
 import com.typesafe.scalalogging.Logger
@@ -147,10 +146,7 @@ object FakeWorkerClient {
         }
       }
       .map { entry =>
-        Definition(
-          className = entry._1,
-          definitions = entry._2
-        )
+        Definition.of(entry._1, entry._2.asJava)
       }
       .toSeq
   }

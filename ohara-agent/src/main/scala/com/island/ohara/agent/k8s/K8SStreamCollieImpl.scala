@@ -47,9 +47,6 @@ private class K8SStreamCollieImpl(node: NodeCollie, bkCollie: BrokerCollie, k8sC
       .name(containerInfo.name)
       .labelName(OHARA_LABEL)
       .domainName(K8S_DOMAIN_NAME)
-      .portMappings(Map(jmxPort -> jmxPort))
-      .routes(route)
-      .envs(containerInfo.environments)
       .args(StreamCollie.formatJMXProperties(node.name, jmxPort) ++
         Seq(StreamCollie.MAIN_ENTRY,
             s"""${StreamDefUtils.JAR_URL_DEFINITION.key()}=${jarInfo.url.toURI.toASCIIString}"""))
@@ -77,6 +74,28 @@ private class K8SStreamCollieImpl(node: NodeCollie, bkCollie: BrokerCollie, k8sC
     previousContainers: Seq[ContainerInfo],
     newNodeName: String)(implicit executionContext: ExecutionContext): Future[StreamClusterInfo] =
     Future.failed(new UnsupportedOperationException("stream collie doesn't support to add node from a running cluster"))
+
+  override protected def doRunContainer(node: Node, containerInfo: ContainerInfo, commands: Seq[String])(
+    implicit executionContext: ExecutionContext): Future[Option[String]] = {
+    k8sClient
+      .containerCreator()
+      .imageName(containerInfo.imageName)
+      .nodeName(containerInfo.nodeName)
+      .hostname(s"${containerInfo.name}$DIVIDER${node.name}")
+      .name(containerInfo.name)
+      .labelName(OHARA_LABEL)
+      .domainName(K8S_DOMAIN_NAME)
+      .envs(containerInfo.environments)
+      .args(commands)
+      .threadPool(executionContext)
+      .create()
+      .flatMap(_ => k8sClient.log(containerInfo.name).map(str => Some(str)))
+      .recover {
+        case e: Throwable =>
+          LOG.error(s"failed to run command for image ${containerInfo.imageName} on ${node.name}", e)
+          None
+      }
+  }
 
   override protected def nodeCollie: NodeCollie = node
   override protected def prefixKey: String = PREFIX_KEY

@@ -19,7 +19,7 @@ package com.island.ohara.client.configurator.v0
 import com.island.ohara.client.configurator.v0.FileInfoApi._
 import com.island.ohara.client.configurator.v0.MetricsApi.Metrics
 import com.island.ohara.common.annotations.{Optional, VisibleForTesting}
-import com.island.ohara.common.setting.ObjectKey
+import com.island.ohara.common.setting.{Definition, ObjectKey}
 import com.island.ohara.common.util.{CommonUtils, VersionUtils}
 import spray.json.DefaultJsonProtocol._
 import spray.json.{JsArray, JsNull, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, _}
@@ -262,7 +262,7 @@ object WorkerApi {
               TAGS_KEY -> JsObject(obj.tags),
               NODE_NAMES_KEY -> JsArray(obj.nodeNames.map(JsString(_)).toVector),
               // -----------------------------------------------------------//
-              CONNECTORS_KEY -> JsArray(obj.connectors.map(Definition.DEFINITION_JSON_FORMAT.write).toVector),
+              CONNECTORS_KEY -> JsArray(obj.connectors.map(DefinitionApi.DEFINITION_JSON_FORMAT.write).toVector),
               DEAD_NODES_KEY -> JsArray(obj.deadNodes.map(JsString(_)).toVector),
               LAST_MODIFIED_KEY -> JsNumber(obj.lastModified),
               STATE_KEY -> obj.state.fold[JsValue](JsNull)(JsString(_)),
@@ -270,7 +270,7 @@ object WorkerApi {
             ))
         )
 
-        implicit val DEFINITION_JSON_FORMAT: OharaJsonFormat[Definition] = Definition.DEFINITION_JSON_FORMAT
+        implicit val DEFINITION_JSON_FORMAT: OharaJsonFormat[Definition] = DefinitionApi.DEFINITION_JSON_FORMAT
         override def read(json: JsValue): WorkerClusterInfo = WorkerClusterInfo(
           settings = noJsNull(json)("settings").asJsObject.fields,
           connectors = noJsNull(json)(CONNECTORS_KEY).convertTo[Seq[Definition]],

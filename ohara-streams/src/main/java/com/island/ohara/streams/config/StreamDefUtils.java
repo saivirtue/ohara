@@ -255,6 +255,17 @@ public final class StreamDefUtils {
           .valueType(Type.STRING)
           .build();
 
+  // this streamApp entry class name
+  public static final SettingDef CLASS_NAME_DEFINITION =
+      SettingDef.builder()
+          .key("className")
+          .group(CORE_GROUP)
+          .orderInGroup(ORDER_COUNTER.getAndIncrement())
+          .readonly()
+          .internal()
+          .valueType(Type.STRING)
+          .build();
+
   /**
    * Load configDefs from default definitions.
    *

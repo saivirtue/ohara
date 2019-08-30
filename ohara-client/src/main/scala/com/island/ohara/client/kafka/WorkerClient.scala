@@ -22,11 +22,10 @@ import java.util.concurrent.TimeUnit
 
 import akka.stream.StreamTcpException
 import com.island.ohara.client.HttpExecutor
-import com.island.ohara.client.configurator.v0.Definition
 import com.island.ohara.client.kafka.WorkerJson._
 import com.island.ohara.common.annotations.Optional
 import com.island.ohara.common.data.Column
-import com.island.ohara.common.setting.{ConnectorKey, SettingDef, TopicKey}
+import com.island.ohara.common.setting.{ConnectorKey, Definition, SettingDef, TopicKey}
 import com.island.ohara.common.util.CommonUtils
 import com.island.ohara.kafka.connector.json.{ConverterType, _}
 import com.typesafe.scalalogging.Logger
@@ -265,19 +264,12 @@ object WorkerClient {
       override def connectorDefinitions()(implicit executionContext: ExecutionContext): Future[Seq[Definition]] =
         plugins()
           .flatMap(Future.traverse(_) { p =>
-            definitions(p.className)
-              .map(
-                definitions =>
-                  Definition(
-                    className = p.className,
-                    definitions = definitions
-                ))
-              .recover {
-                // It should fail if we try to parse non-ohara connectors
-                case _: IllegalArgumentException => Definition(p.className, Seq.empty)
-              }
+            definitions(p.className).map(definitions => Definition.of(p.className, definitions.asJava)).recover {
+              // It should fail if we try to parse non-ohara connectors
+              case _: IllegalArgumentException => Definition.of(p.className, Seq.empty.asJava)
+            }
           })
-          .map(_.filter(_.definitions.nonEmpty))
+          .map(_.filterNot(_.definitions().isEmpty))
 
       override def activeConnectors()(implicit executionContext: ExecutionContext): Future[Seq[String]] = retry(
         () => HttpExecutor.SINGLETON.get[Seq[String], Error](s"http://$workerAddress/connectors"),

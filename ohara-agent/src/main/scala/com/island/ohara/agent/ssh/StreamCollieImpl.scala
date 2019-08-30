@@ -80,6 +80,32 @@ private class StreamCollieImpl(node: NodeCollie, dockerCache: DockerClientCache,
     newNodeName: String)(implicit executionContext: ExecutionContext): Future[StreamClusterInfo] =
     Future.failed(new UnsupportedOperationException("stream collie doesn't support add node from a running cluster"))
 
+  override protected def doRunContainer(node: Node, containerInfo: ContainerInfo, commands: Seq[String])(
+    implicit executionContext: ExecutionContext): Future[Option[String]] =
+    Future.successful(try {
+      dockerCache.exec(
+        node,
+        _.containerCreator()
+          .imageName(containerInfo.imageName)
+          .hostname(containerInfo.name)
+          .name(containerInfo.name)
+          .command(commands.mkString(" "))
+          .create()
+      )
+      Some(dockerCache.exec(node, _.log(containerInfo.name)))
+    } catch {
+      case e: Throwable =>
+        LOG.error(s"failed to run command for image ${containerInfo.imageName} on ${node.name}", e)
+        None
+    } finally {
+      // after fetch the console string, remove the container immediately
+      try dockerCache.exec(node, _.forceRemove(containerInfo.name))
+      catch {
+        case _: Throwable =>
+        // do nothing
+      }
+    })
+
   override protected def nodeCollie: NodeCollie = node
   override protected def prefixKey: String = PREFIX_KEY
 

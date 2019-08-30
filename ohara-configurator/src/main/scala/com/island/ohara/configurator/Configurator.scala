@@ -222,7 +222,8 @@ class Configurator private[configurator] (val hostname: String, val port: Int)(i
       fileStore.route,
       LogRoute.apply,
       ObjectRoute.apply,
-      ContainerRoute.apply
+      ContainerRoute.apply,
+      DefinitionRoute.apply
     ).reduce[server.Route]((a, b) => a ~ b))
 
   private[this] def privateRoute(): server.Route =

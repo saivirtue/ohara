@@ -181,13 +181,10 @@ object StreamApi {
       .rejectEmptyString()
       .refine
 
-  implicit val DEFINITION_JSON_FORMAT: OharaJsonFormat[Definition] = Definition.DEFINITION_JSON_FORMAT
-
   /**
     * The Stream Cluster Information stored in configurator
     *
     * @param settings streamApp key-value pair settings
-    * @param definition the core and custom definition that defined in jar
     * @param nodeNames node list of streamApp running container
     * @param deadNodes dead node list of the exited containers from this cluster
     * @param state the state of streamApp (stopped streamApp does not have this field)
@@ -196,7 +193,6 @@ object StreamApi {
     * @param lastModified this data change time
     */
   final case class StreamClusterInfo(settings: Map[String, JsValue],
-                                     definition: Option[Definition],
                                      // TODO: move nodeNames to settings since it is a "setting" from user ... by chia
                                      // https://github.com/oharastream/ohara/issues/2438
                                      nodeNames: Set[String],
@@ -249,6 +245,7 @@ object StreamApi {
     def jmxPort: Int = plain(StreamDefUtils.JMX_PORT_DEFINITION.key()).toInt
     // TODO remove this default value after we could handle from UI
     def exactlyOnce: Boolean = false
+    def className: Option[String] = plain.get(StreamDefUtils.CLASS_NAME_DEFINITION.key())
 
     override def clone(nodeNames: Set[String],
                        deadNodes: Set[String],
@@ -269,7 +266,7 @@ object StreamApi {
   private[ohara] implicit val STREAM_CLUSTER_INFO_JSON_FORMAT: OharaJsonFormat[StreamClusterInfo] =
     JsonRefiner[StreamClusterInfo]
       .format(new RootJsonFormat[StreamClusterInfo] {
-        private[this] val format = jsonFormat8(StreamClusterInfo)
+        private[this] val format = jsonFormat7(StreamClusterInfo)
         override def read(json: JsValue): StreamClusterInfo = format.read(json)
         override def write(obj: StreamClusterInfo): JsValue =
           JsObject(

@@ -19,6 +19,7 @@ package com.island.ohara.configurator.route
 import akka.http.scaladsl.server
 import com.island.ohara.agent._
 import com.island.ohara.client.configurator.v0.BrokerApi.BrokerClusterInfo
+import com.island.ohara.client.configurator.v0.DefinitionApi.Params
 import com.island.ohara.client.configurator.v0.MetricsApi.Metrics
 import com.island.ohara.client.configurator.v0.StreamApi._
 import com.island.ohara.client.kafka.TopicAdmin.TopicInfo
@@ -144,39 +145,25 @@ private[configurator] object StreamRoute {
       }
     }
 
-  private[this] def hookOfCreation(implicit fileStore: FileStore,
-                                   nodeCollie: NodeCollie,
+  private[this] def hookOfCreation(implicit nodeCollie: NodeCollie,
                                    workerCollie: WorkerCollie,
                                    brokerCollie: BrokerCollie,
-                                   streamCollie: StreamCollie,
                                    executionContext: ExecutionContext): HookOfCreation[Creation, StreamClusterInfo] =
     (creation: Creation) =>
       pickBrokerCluster(creation.brokerClusterName, creation.jarKey).flatMap { bkName =>
         //TODO remove this after #2288
-        pickNodeNames(Some(creation.nodeNames), creation.instances).flatMap(
-          nodes =>
-            creation.jarKey
-              .map(fileStore.fileInfo)
-              .map(_.map(_.url).flatMap(streamCollie.loadDefinition).map((_, Option.empty[String])))
-              .getOrElse(Future.successful((None, None)))
-              .recover {
-                case e: Throwable => (None, Some(e.getMessage))
-              }
-              .map {
-                case (definition, error) =>
-                  StreamClusterInfo(
-                    settings = creation.settings + (StreamDefUtils.BROKER_CLUSTER_NAME_DEFINITION.key() -> JsString(
-                      bkName)),
-                    definition = definition,
-                    nodeNames = nodes.getOrElse(Set.empty),
-                    deadNodes = Set.empty,
-                    state = None,
-                    metrics = Metrics(Seq.empty),
-                    error = error,
-                    lastModified = CommonUtils.current()
-                  )
-              }
-              .map(assertParameters))
+        pickNodeNames(Some(creation.nodeNames), creation.instances)
+          .map(nodes =>
+            StreamClusterInfo(
+              settings = creation.settings + (StreamDefUtils.BROKER_CLUSTER_NAME_DEFINITION.key() -> JsString(bkName)),
+              nodeNames = nodes.getOrElse(Set.empty),
+              deadNodes = Set.empty,
+              state = None,
+              metrics = Metrics(Seq.empty),
+              error = None,
+              lastModified = CommonUtils.current()
+          ))
+          .map(assertParameters)
     }
 
   private[this] def hookOfUpdate(
@@ -209,7 +196,6 @@ private[configurator] object StreamRoute {
         .map { update =>
           StreamClusterInfo(
             settings = previousOption.map(_.settings).getOrElse(Map.empty) ++ update.settings,
-            definition = previousOption.flatMap(_.definition),
             nodeNames = update.nodeNames.orElse(previousOption.map(_.nodeNames)).getOrElse(Set.empty),
             // this cluster is not running so we don't need to keep the dead nodes in the updated cluster.
             deadNodes = Set.empty,
@@ -223,29 +209,33 @@ private[configurator] object StreamRoute {
 
   private[this] def hookOfStart(implicit store: DataStore,
                                 fileStore: FileStore,
-                                clusterCollie: ClusterCollie,
+                                nodeCollie: NodeCollie,
+                                streamCollie: StreamCollie,
                                 brokerCollie: BrokerCollie,
                                 executionContext: ExecutionContext): HookOfAction =
     (key: ObjectKey, _, _) =>
       store
         .value[StreamClusterInfo](key)
-        .map { info =>
+        .flatMap { info =>
           // check the values by definition
           //TODO move this to RouteUtils in #2191
-          info.definition.fold(throw new IllegalArgumentException("definition could not be empty")) { definition =>
+          streamCollie.fetchDefinitions(Params(info.imageName, Some(info.jarInfo))).map { definition =>
             var copy = info.settings
-            definition.definitions.foreach(
-              settingDef =>
+            definition.definitions
+              .stream()
+              .forEach(settingDef =>
                 // add the (key, defaultValue) to settings if absent
                 if (!copy.contains(settingDef.key()) && !CommonUtils.isEmpty(settingDef.defaultValue()))
                   copy += settingDef.key() -> JsString(settingDef.defaultValue()))
             info.plain.foreach {
               case (k, v) =>
                 definition.definitions
-                  .find(_.key() == k)
-                  .fold(throw new IllegalArgumentException(s"$k not found in definition")) { settingDef =>
-                    settingDef.checker().accept(v)
-                  }
+                  .stream()
+                  .filter(_.key() == k)
+                  .findFirst()
+                  .orElseThrow(() => new IllegalArgumentException(s"$k not found in definition"))
+                  .checker()
+                  .accept(v)
             }
             info.copy(settings = copy)
           }
@@ -267,7 +257,7 @@ private[configurator] object StreamRoute {
             }
             .flatMap { brokerClusterInfo =>
               fileStore.fileInfo(streamClusterInfo.jarKey).flatMap { fileInfo =>
-                clusterCollie.streamCollie.creator
+                streamCollie.creator
                   .clusterName(streamClusterInfo.name)
                   .imageName(IMAGE_NAME_DEFAULT)
                   .jarInfo(fileInfo)

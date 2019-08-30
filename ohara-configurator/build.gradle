@@ -76,3 +76,14 @@ task runConfigurator(type: JavaExec, dependsOn: 'classes') {
     .collect(Collectors.toList())
 }
 
+/**
+ * package only streamApp jar for testing purpose.
+ */
+task streamAppJar(type: Jar, dependsOn: compileScala) {
+  from sourceSets.test.output
+  include '**/DefinitionStreamApp**.class'
+  archiveName "ohara-definition-streamapp.jar"
+}
+
+test.dependsOn streamAppJar
+

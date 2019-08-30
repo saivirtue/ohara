@@ -20,9 +20,11 @@ import java.util.Objects
 import com.island.ohara.agent.docker.ContainerState
 import com.island.ohara.client.configurator.v0.{ClusterInfo, ZookeeperApi}
 import com.island.ohara.client.configurator.v0.ContainerApi.{ContainerInfo, PortMapping, PortPair}
+import com.island.ohara.client.configurator.v0.DefinitionApi.Params
 import com.island.ohara.client.configurator.v0.NodeApi.Node
 import com.island.ohara.client.configurator.v0.ZookeeperApi.ZookeeperClusterInfo
 import com.island.ohara.common.annotations.Optional
+import com.island.ohara.common.setting.Definition
 import com.island.ohara.common.util.CommonUtils
 import spray.json.JsString
 
@@ -182,6 +184,10 @@ trait ZookeeperCollie extends Collie[ZookeeperClusterInfo] {
         lastModified = CommonUtils.current()
       ))
   }
+
+  override def fetchDefinitions(params: Params)(implicit executionContext: ExecutionContext,
+                                                nodeCollie: NodeCollie): Future[Definition] =
+    throw new UnsupportedOperationException("Will be implemented in #2191")
 }
 
 object ZookeeperCollie {

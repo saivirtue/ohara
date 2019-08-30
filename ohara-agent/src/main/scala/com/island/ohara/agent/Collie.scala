@@ -22,7 +22,9 @@ import com.island.ohara.agent.Collie.ClusterCreator
 import com.island.ohara.agent.docker.ContainerState
 import com.island.ohara.client.configurator.v0.ClusterInfo
 import com.island.ohara.client.configurator.v0.ContainerApi.ContainerInfo
+import com.island.ohara.client.configurator.v0.DefinitionApi.Params
 import com.island.ohara.common.annotations.Optional
+import com.island.ohara.common.setting.Definition
 import com.island.ohara.common.util.CommonUtils
 
 import scala.collection.JavaConverters._
@@ -263,6 +265,17 @@ trait Collie[T <: ClusterInfo] {
     * @return ip address or hostname (if you do nothing to it)
     */
   protected def resolveHostName(hostname: String): String = CommonUtils.address(hostname)
+
+  /**
+    * Get all definitions from this cluster.
+    * If the cluster has no definitions, will return an object with empty '''definitions'''
+    *
+    * @param nodeCollie node collie
+    * @param executionContext execution context
+    * @return the definitions object
+    */
+  def fetchDefinitions(params: Params)(implicit executionContext: ExecutionContext,
+                                       nodeCollie: NodeCollie): Future[Definition]
 }
 
 object Collie {

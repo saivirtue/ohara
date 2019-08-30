@@ -329,7 +329,6 @@ class TestStreamRoute extends SmallTest with Matchers {
     val value = JsString(CommonUtils.randomString())
     val streamDesc = result(accessStream.request.jarKey(ObjectKey.of(jar.group, jar.name)).setting(key, value).create())
     // the url is not illegal
-    streamDesc.definition should not be None
     streamDesc.settings(key) shouldBe value
   }
 

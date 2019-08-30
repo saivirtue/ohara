@@ -52,6 +52,7 @@ package object v0 {
   val STOP_COMMAND: String = "stop"
   val PAUSE_COMMAND: String = "pause"
   val RESUME_COMMAND: String = "resume"
+  val DEFINITIONS_COMMAND: String = "definitions"
 
   /**
     * In this APIs we have to integrate json format between scala (spray-json) and java (jackson).

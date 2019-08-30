@@ -19,7 +19,7 @@ package com.island.ohara.client.configurator.v0
 import com.island.ohara.client.configurator.v0.MetricsApi.{Meter, Metrics}
 import com.island.ohara.client.configurator.v0.StreamApi.StreamClusterInfo
 import com.island.ohara.common.rule.SmallTest
-import com.island.ohara.common.setting.{ObjectKey, SettingDef, TopicKey}
+import com.island.ohara.common.setting.{Definition, ObjectKey, SettingDef, TopicKey}
 import com.island.ohara.common.util.{CommonUtils, VersionUtils}
 import com.island.ohara.streams.config.StreamDefUtils
 import org.junit.Test
@@ -27,6 +27,7 @@ import org.scalatest.Matchers
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -73,7 +74,6 @@ class TestStreamApi extends SmallTest with Matchers {
         StreamDefUtils.JMX_PORT_DEFINITION.key() -> JsNumber(0),
         StreamDefUtils.TAGS_DEFINITION.key() -> JsObject(Map("bar" -> JsString("foo"), "he" -> JsNumber(1)))
       ),
-      definition = Some(Definition("className", Seq(SettingDef.builder().key("key").group("group").build()))),
       nodeNames = Set("node1"),
       deadNodes = Set.empty,
       state = None,
@@ -99,8 +99,8 @@ class TestStreamApi extends SmallTest with Matchers {
 
   @Test
   def testStreamDefinitionEquals(): Unit = {
-    val definition = Definition("className", Seq(SettingDef.builder().key("key").group("group").build()))
-    definition shouldBe Definition.DEFINITION_JSON_FORMAT.read(Definition.DEFINITION_JSON_FORMAT.write(definition))
+    val definition = Definition.of("className", Seq(SettingDef.builder().key("key").group("group").build()).asJava)
+    definition shouldBe Definition.ofJson(definition.toString)
   }
 
   @Test
@@ -117,7 +117,6 @@ class TestStreamApi extends SmallTest with Matchers {
         StreamDefUtils.JMX_PORT_DEFINITION.key() -> JsNumber(0),
         StreamDefUtils.TAGS_DEFINITION.key() -> JsObject(Map("bar" -> JsString("foo"), "he" -> JsNumber(1)))
       ),
-      definition = Some(Definition("className", Seq(SettingDef.builder().key("key").group("group").build()))),
       nodeNames = Set("node1"),
       deadNodes = Set.empty,
       state = None,
@@ -134,7 +133,6 @@ class TestStreamApi extends SmallTest with Matchers {
     info.jarKey shouldBe ObjectKey.of("group", "name")
     info.from shouldBe Set(fromTopicKey)
     info.to shouldBe Set(toTopicKey)
-    info.definition.isDefined && info.definition.get.definitions.size == 1 shouldBe true
     info.tags.keys.size shouldBe 2
     // we initial exactlyOnce to be false
     info.exactlyOnce shouldBe false
@@ -604,7 +602,6 @@ class TestStreamApi extends SmallTest with Matchers {
           StreamDefUtils.JMX_PORT_DEFINITION.key() -> JsNumber(0),
           StreamDefUtils.TAGS_DEFINITION.key() -> JsObject(Map("bar" -> JsString("foo"), "he" -> JsNumber(1)))
         ),
-        definition = Some(Definition("className", Seq(SettingDef.builder().key("key").group("group").build()))),
         nodeNames = Set("node1"),
         deadNodes = Set.empty,
         state = None,

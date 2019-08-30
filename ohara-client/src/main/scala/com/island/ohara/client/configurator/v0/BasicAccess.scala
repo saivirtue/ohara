@@ -58,7 +58,7 @@ abstract class BasicAccess private[v0] (prefixPath: String) {
     * @return url string
     */
   protected final def url(key: ObjectKey): String =
-    s"$url/${key.name}?${GROUP_KEY}=${key.group}"
+    s"$url/${key.name}?$GROUP_KEY=${key.group}"
 
   protected final def put(key: ObjectKey, action: String)(implicit executionContext: ExecutionContext): Future[Unit] =
     exec.put[ErrorApi.Error](url(key, action))

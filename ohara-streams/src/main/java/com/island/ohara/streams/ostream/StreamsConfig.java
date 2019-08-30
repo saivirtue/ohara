@@ -72,6 +72,5 @@ class StreamsConfig {
           + TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG;
 
   // for internal usage
-  static final String STREAMAPP_CONFIG_KEY = "CONFIG_KEY";
   static final String STREAMAPP_CONFIG_METHOD_NAME = "config";
 }

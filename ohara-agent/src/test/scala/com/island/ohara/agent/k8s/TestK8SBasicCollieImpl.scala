@@ -19,9 +19,11 @@ package com.island.ohara.agent.k8s
 import com.island.ohara.agent.fake.FakeK8SClient
 import com.island.ohara.agent.{Collie, NodeCollie, ZookeeperCollie}
 import com.island.ohara.client.configurator.v0.ContainerApi.ContainerInfo
+import com.island.ohara.client.configurator.v0.DefinitionApi.Params
 import com.island.ohara.client.configurator.v0.NodeApi.Node
 import com.island.ohara.client.configurator.v0.ZookeeperApi.ZookeeperClusterInfo
 import com.island.ohara.common.rule.SmallTest
+import com.island.ohara.common.setting.Definition
 import com.island.ohara.common.util.CommonUtils
 import org.junit.Test
 import org.scalatest.Matchers
@@ -87,6 +89,10 @@ class TestK8SBasicCollieImpl extends SmallTest with Matchers {
           throw new UnsupportedOperationException("Test doesn't support creator function")
 
         override def serviceName: String = tmpServiceName
+
+        override def fetchDefinitions(params: Params)(implicit executionContext: ExecutionContext,
+                                                      nodeCollie: NodeCollie): Future[Definition] =
+          throw new UnsupportedOperationException("Test doesn't support fetch definition function")
       }
 
     val containers = k8sBasicCollieImpl.clusterWithAllContainers()(Implicits.global)

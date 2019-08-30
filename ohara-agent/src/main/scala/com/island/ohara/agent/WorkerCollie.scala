@@ -19,12 +19,14 @@ import java.util.Objects
 
 import com.island.ohara.agent.docker.ContainerState
 import com.island.ohara.client.configurator.v0.ContainerApi.{ContainerInfo, PortMapping, PortPair}
+import com.island.ohara.client.configurator.v0.DefinitionApi.Params
 import com.island.ohara.client.configurator.v0.FileInfoApi.FileInfo
 import com.island.ohara.client.configurator.v0.NodeApi.Node
 import com.island.ohara.client.configurator.v0.WorkerApi.{Creation, WorkerClusterInfo}
-import com.island.ohara.client.configurator.v0.{ClusterInfo, Definition, WorkerApi}
+import com.island.ohara.client.configurator.v0.{ClusterInfo, WorkerApi}
 import com.island.ohara.client.kafka.WorkerClient
 import com.island.ohara.common.annotations.Optional
+import com.island.ohara.common.setting.Definition
 import com.island.ohara.common.util.CommonUtils
 import com.island.ohara.metrics.BeanChannel
 import com.island.ohara.metrics.basic.CounterMBean
@@ -297,6 +299,10 @@ trait WorkerCollie extends Collie[WorkerClusterInfo] {
     */
   protected def brokerContainers(clusterName: String)(
     implicit executionContext: ExecutionContext): Future[Seq[ContainerInfo]]
+
+  override def fetchDefinitions(params: Params)(implicit executionContext: ExecutionContext,
+                                                nodeCollie: NodeCollie): Future[Definition] =
+    throw new UnsupportedOperationException("Will be implemented in #2191")
 }
 
 object WorkerCollie {

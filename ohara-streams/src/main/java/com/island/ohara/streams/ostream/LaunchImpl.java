@@ -19,10 +19,10 @@ package com.island.ohara.streams.ostream;
 import com.island.ohara.common.data.Row;
 import com.island.ohara.common.exception.ExceptionHandler;
 import com.island.ohara.common.exception.OharaException;
+import com.island.ohara.common.setting.Definition;
 import com.island.ohara.common.setting.TopicKey;
 import com.island.ohara.streams.OStream;
 import com.island.ohara.streams.StreamApp;
-import com.island.ohara.streams.config.StreamDefUtils;
 import com.island.ohara.streams.config.StreamDefinitions;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -61,9 +61,10 @@ public class LaunchImpl {
                           .getDeclaredMethod(StreamsConfig.STREAMAPP_CONFIG_METHOD_NAME);
                   StreamDefinitions streamDefinitions = (StreamDefinitions) method.invoke(theApp);
 
-                  if (props.containsKey(StreamsConfig.STREAMAPP_CONFIG_KEY)) {
+                  if (props.containsKey(StreamApp.DEFINITION_COMMAND)) {
                     System.out.println(
-                        clz.getCanonicalName() + "=" + StreamDefUtils.toJson(streamDefinitions));
+                        Definition.of(clz.getCanonicalName(), streamDefinitions.values())
+                            .toString());
                     return;
                   }
 
