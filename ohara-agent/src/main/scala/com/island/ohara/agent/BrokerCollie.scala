@@ -292,7 +292,10 @@ trait BrokerCollie extends Collie[BrokerClusterInfo] {
         nodeNames = creation.nodeNames,
         // Currently, docker and k8s has same naming rule for "Running",
         // it is ok that we use the containerState.RUNNING here.
-        deadNodes = containers.filterNot(_.state == ContainerState.RUNNING.name).map(_.nodeName).toSet,
+        deadNodes = creation.nodeNames -- containers
+          .filter(_.state == ContainerState.RUNNING.name)
+          .map(_.nodeName)
+          .toSet,
         state = toClusterState(containers).map(_.name),
         // TODO how could we fetch the error?...by Sam
         error = None,
