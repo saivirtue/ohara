@@ -207,10 +207,7 @@ trait StreamCollie extends Collie[StreamClusterInfo] {
   private[agent] def toStreamCluster(clusterName: String, containers: Seq[ContainerInfo])(
     implicit executionContext: ExecutionContext): Future[StreamClusterInfo] = {
     // get the first running container, or first non-running container if not found
-    val creation = StreamApi.access.request
-      .settings(seekSettings(containers.head.environments))
-      .nodeNames(containers.map(_.nodeName).toSet)
-      .creation
+    val creation = StreamApi.access.request.settings(seekSettings(containers.head.environments)).creation
     loadDefinition(creation.jarInfo.get.url).map { definition =>
       StreamClusterInfo(
         settings = creation.settings,

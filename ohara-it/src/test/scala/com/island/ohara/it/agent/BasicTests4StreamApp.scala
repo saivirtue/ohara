@@ -408,6 +408,10 @@ abstract class BasicTests4StreamApp extends IntegrationTest with Matchers {
 
     await { () =>
       val cluster = result(access.get(stream.name))
+      log.info(s"[sam] cluster info : $cluster")
+      log.info("----------------------------------------------------------------------")
+      log.info(s"nodeCache data: $nodeCache")
+      log.info(s"deadNodes data: $deadNodes")
       cluster.nodeNames == nodeCache.map(_.hostname).toSet &&
       cluster.deadNodes == deadNodes.map(_.hostname)
     }

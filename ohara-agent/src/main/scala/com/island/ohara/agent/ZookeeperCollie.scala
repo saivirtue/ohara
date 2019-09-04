@@ -170,10 +170,7 @@ trait ZookeeperCollie extends Collie[ZookeeperClusterInfo] {
   private[agent] def toZookeeperCluster(clusterName: String,
                                         containers: Seq[ContainerInfo]): Future[ZookeeperClusterInfo] = {
     val first = containers.head
-    val creation = ZookeeperApi.access.request
-      .settings(seekSettings(first.environments))
-      .nodeNames(containers.map(_.nodeName).toSet)
-      .creation
+    val creation = ZookeeperApi.access.request.settings(seekSettings(first.environments)).creation
     Future.successful(
       ZookeeperClusterInfo(
         settings = creation.settings,
