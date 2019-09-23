@@ -253,17 +253,7 @@ object StreamApi {
         private[this] val format = jsonFormat7(StreamClusterInfo)
         override def read(json: JsValue): StreamClusterInfo = format.read(json)
         override def write(obj: StreamClusterInfo): JsValue =
-          JsObject(
-            noJsNull(
-              format.write(obj).asJsObject.fields ++
-                // TODO: remove these stale fields
-                Map(
-                  NAME_KEY -> JsString(obj.name),
-                  GROUP_KEY -> JsString(obj.group),
-                  IMAGE_NAME_KEY -> JsString(obj.imageName),
-                  NODE_NAMES_KEY -> JsArray(obj.nodeNames.map(JsString(_)).toVector)
-                )
-            ))
+          JsObject(noJsNull(format.write(obj).asJsObject.fields))
       })
       .refine
 
