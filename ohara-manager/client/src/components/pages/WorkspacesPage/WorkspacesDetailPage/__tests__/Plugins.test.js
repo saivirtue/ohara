@@ -30,10 +30,11 @@ afterEach(cleanup);
 const workerName = generate.serviceName();
 const pluginName = generate.serviceName();
 const file = {
-  group: `${workerName}-plugin`,
+  group: workerName,
   lastModified: 1568704840000,
   name: pluginName,
   size: 3928198,
+  tags: { type: 'plugin' },
 };
 
 const props = {
@@ -103,10 +104,11 @@ describe('<Plugins />', () => {
   it('add new plugin with plugins page', async () => {
     const newFileName = generate.serviceName();
     const newFile = {
-      group: `${workerName}-plugin`,
+      group: workerName,
       lastModified: 1568704840000,
       name: newFileName,
       size: 3928198,
+      tags: { type: 'plugin' },
     };
 
     jest.spyOn(useApi, 'useFetchApi').mockImplementation(() => {

@@ -36,20 +36,8 @@ object HdfsInfoApi {
   final case class Creation(group: String, name: String, uri: String, tags: Map[String, JsValue])
       extends com.island.ohara.client.configurator.v0.BasicCreation
   implicit val HDFS_CREATION_JSON_FORMAT: OharaJsonFormat[Creation] =
-    JsonRefiner[Creation]
-      .format(jsonFormat4(Creation))
-      .rejectEmptyString()
-      .stringRestriction(Set(GROUP_KEY, NAME_KEY))
-      .withNumber()
-      .withCharset()
-      .withDot()
-      .withDash()
-      .withUnderLine()
-      .toRefiner
-      .nullToString(GROUP_KEY, () => GROUP_DEFAULT)
-      .nullToString(NAME_KEY, () => CommonUtils.randomString(10))
-      .nullToEmptyObject(TAGS_KEY)
-      .refine
+    // this object is open to user define the (group, name) in UI, we need to handle the key rules
+    basicRulesOfKey[Creation].format(jsonFormat4(Creation)).rejectEmptyString().nullToEmptyObject(TAGS_KEY).refine
 
   final case class HdfsInfo(group: String, name: String, uri: String, lastModified: Long, tags: Map[String, JsValue])
       extends Data {
@@ -130,17 +118,24 @@ object HdfsInfoApi {
         this
       }
 
-      override private[v0] def creation: Creation = Creation(
-        group = CommonUtils.requireNonEmpty(group),
-        name = if (CommonUtils.isEmpty(name)) CommonUtils.randomString(10) else name,
-        uri = CommonUtils.requireNonEmpty(uri),
-        tags = if (tags == null) Map.empty else tags
-      )
+      override private[v0] def creation: Creation =
+        // auto-complete the creation via our refiner
+        HDFS_CREATION_JSON_FORMAT.read(
+          HDFS_CREATION_JSON_FORMAT.write(Creation(
+            group = CommonUtils.requireNonEmpty(group),
+            name = if (CommonUtils.isEmpty(name)) CommonUtils.randomString(10) else name,
+            uri = CommonUtils.requireNonEmpty(uri),
+            tags = if (tags == null) Map.empty else tags
+          )))
 
-      override private[v0] def updating: Updating = Updating(
-        uri = Option(uri).map(CommonUtils.requireNonEmpty),
-        tags = Option(tags)
-      )
+      override private[v0] def updating: Updating =
+        // auto-complete the updating via our refiner
+        HDFS_UPDATING_JSON_FORMAT.read(
+          HDFS_UPDATING_JSON_FORMAT.write(
+            Updating(
+              uri = Option(uri).map(CommonUtils.requireNonEmpty),
+              tags = Option(tags)
+            )))
 
       override def create()(implicit executionContext: ExecutionContext): Future[HdfsInfo] =
         exec.post[Creation, HdfsInfo, ErrorApi.Error](

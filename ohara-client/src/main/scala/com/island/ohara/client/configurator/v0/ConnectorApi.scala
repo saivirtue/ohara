@@ -99,56 +99,56 @@ object ConnectorApi {
     override def tags: Map[String, JsValue] = settings.tags.get
   }
 
-  implicit val CONNECTOR_CREATION_FORMAT: OharaJsonFormat[Creation] = JsonRefiner[Creation]
-    .format(new RootJsonFormat[Creation] {
-      override def write(obj: Creation): JsValue = JsObject(noJsNull(obj.settings))
-      override def read(json: JsValue): Creation = new Creation(json.asJsObject.fields)
-    })
-    // set the default number of tasks
-    .nullToInt(NUMBER_OF_TASKS_KEY, DEFAULT_NUMBER_OF_TASKS)
-    .rejectEmptyString()
-    .nullToString(GROUP_KEY, () => GROUP_DEFAULT)
-    .nullToString(NAME_KEY, () => CommonUtils.randomString(10))
-    .nullToEmptyObject(TAGS_KEY)
-    .nullToEmptyArray(COLUMNS_KEY)
-    .nullToEmptyArray(TOPIC_KEYS_KEY)
-    // TOPIC_NAME_KEYS is used internal, and its value is always replaced by topic key. Hence, we produce a quick failure
-    // to users to save their life :)
-    .rejectKeyword(TOPIC_NAMES_KEY)
-    // CONNECTOR_KEY_KEY is internal keyword
-    .rejectKeyword(CONNECTOR_KEY_KEY)
-    .requireKey(CONNECTOR_CLASS_KEY)
-    .valueChecker(
-      COLUMNS_KEY, {
-        case v: JsArray if v.elements.nonEmpty =>
-          try {
-            val columns = PropGroups.ofJson(v.toString()).toColumns.asScala
-            // name can't be empty
-            if (columns.exists(_.name().isEmpty))
-              throw DeserializationException(msg = s"name can't be empty", fieldNames = List("name"))
-            // newName can't be empty
-            if (columns.exists(_.newName().isEmpty))
-              throw DeserializationException(msg = s"newName can't be empty", fieldNames = List("newName"))
-            // order can't be negative number
-            if (columns.exists(_.order() < 0))
-              throw DeserializationException(msg = s"order can't be negative number", fieldNames = List("order"))
-            // order can't be duplicate
-            if (columns.map(_.order).toSet.size != columns.size)
-              throw DeserializationException(msg = s"duplicate order:${columns.map(_.order)}",
-                                             fieldNames = List("order"))
-          } catch {
-            case e: DeserializationException => throw e
-            case other: Throwable =>
-              throw DeserializationException(
-                msg = s"the string to $COLUMNS_KEY is not correct format",
-                cause = other,
-                fieldNames = List(COLUMNS_KEY)
-              )
-          }
-        case _ => // do nothing
-      }
-    )
-    .refine
+  implicit val CONNECTOR_CREATION_FORMAT: OharaJsonFormat[Creation] =
+    // this object is open to user define the (group, name) in UI, we need to handle the key rules
+    basicRulesOfKey[Creation]
+      .format(new RootJsonFormat[Creation] {
+        override def write(obj: Creation): JsValue = JsObject(noJsNull(obj.settings))
+        override def read(json: JsValue): Creation = new Creation(json.asJsObject.fields)
+      })
+      // set the default number of tasks
+      .nullToInt(NUMBER_OF_TASKS_KEY, DEFAULT_NUMBER_OF_TASKS)
+      .rejectEmptyString()
+      .nullToEmptyObject(TAGS_KEY)
+      .nullToEmptyArray(COLUMNS_KEY)
+      .nullToEmptyArray(TOPIC_KEYS_KEY)
+      // TOPIC_NAME_KEYS is used internal, and its value is always replaced by topic key. Hence, we produce a quick failure
+      // to users to save their life :)
+      .rejectKeyword(TOPIC_NAMES_KEY)
+      // CONNECTOR_KEY_KEY is internal keyword
+      .rejectKeyword(CONNECTOR_KEY_KEY)
+      .requireKey(CONNECTOR_CLASS_KEY)
+      .valueChecker(
+        COLUMNS_KEY, {
+          case v: JsArray if v.elements.nonEmpty =>
+            try {
+              val columns = PropGroups.ofJson(v.toString()).toColumns.asScala
+              // name can't be empty
+              if (columns.exists(_.name().isEmpty))
+                throw DeserializationException(msg = s"name can't be empty", fieldNames = List("name"))
+              // newName can't be empty
+              if (columns.exists(_.newName().isEmpty))
+                throw DeserializationException(msg = s"newName can't be empty", fieldNames = List("newName"))
+              // order can't be negative number
+              if (columns.exists(_.order() < 0))
+                throw DeserializationException(msg = s"order can't be negative number", fieldNames = List("order"))
+              // order can't be duplicate
+              if (columns.map(_.order).toSet.size != columns.size)
+                throw DeserializationException(msg = s"duplicate order:${columns.map(_.order)}",
+                                               fieldNames = List("order"))
+            } catch {
+              case e: DeserializationException => throw e
+              case other: Throwable =>
+                throw DeserializationException(
+                  msg = s"the string to $COLUMNS_KEY is not correct format",
+                  cause = other,
+                  fieldNames = List(COLUMNS_KEY)
+                )
+            }
+          case _ => // do nothing
+        }
+      )
+      .refine
 
   final class Updating(val settings: Map[String, JsValue]) {
     private[ConnectorApi] def group: Option[String] = noJsNull(settings).get(GROUP_KEY).map(_.convertTo[String])

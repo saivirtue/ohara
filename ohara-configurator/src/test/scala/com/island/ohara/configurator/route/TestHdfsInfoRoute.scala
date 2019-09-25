@@ -24,7 +24,7 @@ import com.island.ohara.common.util.{CommonUtils, Releasable}
 import com.island.ohara.configurator.Configurator
 import org.junit.{After, Test}
 import org.scalatest.Matchers
-import spray.json.{JsNumber, JsString}
+import spray.json.{DeserializationException, JsNumber, JsString}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
@@ -91,7 +91,7 @@ class TestHdfsInfoRoute extends OharaTest with Matchers {
   def testInvalidNameOnCreation(): Unit = {
     val invalidStrings = Seq("a@", "a=", "a\\", "a~", "a//")
     invalidStrings.foreach { invalidString =>
-      an[IllegalArgumentException] should be thrownBy result(
+      an[DeserializationException] should be thrownBy result(
         hdfsApi.request.name(invalidString).uri(CommonUtils.randomString()).create())
     }
   }

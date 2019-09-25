@@ -43,20 +43,8 @@ object JdbcInfoApi {
                             tags: Map[String, JsValue])
       extends com.island.ohara.client.configurator.v0.BasicCreation
   implicit val JDBC_CREATION_JSON_FORMAT: OharaJsonFormat[Creation] =
-    JsonRefiner[Creation]
-      .format(jsonFormat6(Creation))
-      .rejectEmptyString()
-      .stringRestriction(Set(GROUP_KEY, NAME_KEY))
-      .withNumber()
-      .withCharset()
-      .withDot()
-      .withDash()
-      .withUnderLine()
-      .toRefiner
-      .nullToString(GROUP_KEY, () => GROUP_DEFAULT)
-      .nullToString(NAME_KEY, () => CommonUtils.randomString(10))
-      .nullToEmptyObject(TAGS_KEY)
-      .refine
+    // this object is open to user define the (group, name) in UI, we need to handle the key rules
+    basicRulesOfKey[Creation].format(jsonFormat6(Creation)).rejectEmptyString().nullToEmptyObject(TAGS_KEY).refine
 
   final case class JdbcInfo(group: String,
                             name: String,
@@ -157,21 +145,27 @@ object JdbcInfoApi {
         this
       }
 
-      override private[v0] def creation: Creation = Creation(
-        group = CommonUtils.requireNonEmpty(group),
-        name = if (CommonUtils.isEmpty(name)) CommonUtils.randomString(10) else name,
-        url = CommonUtils.requireNonEmpty(jdbcUrl),
-        user = CommonUtils.requireNonEmpty(user),
-        password = CommonUtils.requireNonEmpty(password),
-        tags = if (tags == null) Map.empty else tags
-      )
+      override private[v0] def creation: Creation =
+        // auto-complete the creation via our refiner
+        JDBC_CREATION_JSON_FORMAT.read(
+          JDBC_CREATION_JSON_FORMAT.write(Creation(
+            group = CommonUtils.requireNonEmpty(group),
+            name = if (CommonUtils.isEmpty(name)) CommonUtils.randomString(10) else name,
+            url = CommonUtils.requireNonEmpty(jdbcUrl),
+            user = CommonUtils.requireNonEmpty(user),
+            password = CommonUtils.requireNonEmpty(password),
+            tags = if (tags == null) Map.empty else tags
+          )))
 
-      override private[v0] def updating: Updating = Updating(
-        url = Option(jdbcUrl).map(CommonUtils.requireNonEmpty),
-        user = Option(user).map(CommonUtils.requireNonEmpty),
-        password = Option(password).map(CommonUtils.requireNonEmpty),
-        tags = Option(tags)
-      )
+      override private[v0] def updating: Updating =
+        // auto-complete the updating via our refiner
+        JDBC_UPDATING_JSON_FORMAT.read(
+          JDBC_UPDATING_JSON_FORMAT.write(Updating(
+            url = Option(jdbcUrl).map(CommonUtils.requireNonEmpty),
+            user = Option(user).map(CommonUtils.requireNonEmpty),
+            password = Option(password).map(CommonUtils.requireNonEmpty),
+            tags = Option(tags)
+          )))
 
       override def create()(implicit executionContext: ExecutionContext): Future[JdbcInfo] =
         exec.post[Creation, JdbcInfo, ErrorApi.Error](

@@ -36,7 +36,7 @@ const Topic = props => {
 
   const topicName = props.match.params.connectorName;
   const { workerClusterName } = props.pipeline.tags;
-  const topicGroup = `${workerClusterName}-topic`;
+  const topicGroup = workerClusterName;
 
   useEffect(() => {
     const fetchTopic = async () => {

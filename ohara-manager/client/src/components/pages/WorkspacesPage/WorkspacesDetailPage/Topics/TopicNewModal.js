@@ -48,9 +48,9 @@ const TopicNewModal = props => {
       numberOfPartitions: Number(values.numberOfPartitions),
       numberOfReplications: Number(values.numberOfReplications),
       brokerClusterName: props.brokerClusterName,
-      group: `${worker.name}-topic`,
+      group: `${worker.settings.name}`,
     });
-    await startTopic(`/${values.name}/start?group=${worker.name}-topic`);
+    await startTopic(`/${values.name}/start?group=${worker.settings.name}`);
     setIsSaving(false);
     const isSuccess = get(topicRes(), 'data.isSuccess', false);
     if (isSuccess) {
@@ -128,7 +128,9 @@ TopicNewModal.propTypes = {
   onConfirm: PropTypes.func.isRequired,
   brokerClusterName: PropTypes.string.isRequired,
   worker: PropTypes.shape({
-    name: PropTypes.string.isRequired,
+    settings: PropTypes.shape({
+      name: PropTypes.string.isRequired,
+    }).isRequired,
   }).isRequired,
 };
 

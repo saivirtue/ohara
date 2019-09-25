@@ -62,8 +62,8 @@ const setup = () => {
 
   const pipeline = {
     flows: [
-      { from: { group: 'default', name: topicName }, to: [] },
-      { from: { group: 'default', name: sourceName }, to: [] },
+      { from: { group: 'abc', name: topicName }, to: [] },
+      { from: { group: 'cde', name: sourceName }, to: [] },
     ],
     name: generate.name(),
     tags: {
@@ -178,9 +178,9 @@ describe('<PipelineEditPage />', () => {
           { kind: 'topic', name: 'a', className: CONNECTOR_TYPES.topic },
         ],
         flows: [
-          { from: { group: 'default', name: 'c' }, to: [] },
-          { from: { group: 'default', name: 'b' }, to: [] },
-          { from: { group: 'default', name: 'a' }, to: [] },
+          { from: { group: 'abc', name: 'c' }, to: [] },
+          { from: { group: 'def', name: 'b' }, to: [] },
+          { from: { group: 'xdf', name: 'a' }, to: [] },
         ],
         tags: {
           workerClusterName: generate.name(),
@@ -228,9 +228,9 @@ describe('<PipelineEditPage />', () => {
           { kind: 'topic', name: 'a', className: CONNECTOR_TYPES.topic },
         ],
         flows: [
-          { from: { group: 'default', name: 'c' }, to: [] },
-          { from: { group: 'default', name: 'b' }, to: [] },
-          { from: { group: 'default', name: 'a' }, to: [] },
+          { from: { group: 'abc', name: 'c' }, to: [] },
+          { from: { group: 'def', name: 'b' }, to: [] },
+          { from: { group: 'efx', name: 'a' }, to: [] },
         ],
         group,
         tags: {

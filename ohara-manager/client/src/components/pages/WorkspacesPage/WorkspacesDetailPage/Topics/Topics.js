@@ -54,7 +54,7 @@ const Topics = props => {
   const { waitApi } = useApi.useWaitApi();
 
   const topics = get(topicsRes, 'data.result', []).filter(
-    topic => topic.group === `${worker.name}-topic`,
+    topic => topic.group === `${worker.settings.name}`,
   );
 
   const headRows = [
@@ -105,7 +105,9 @@ const Topics = props => {
         const { name } = targetPipeline;
         usedByWhichPipeline = (
           <Tooltip title={`Go to pipeline: ${name}`} enterDelay={1000}>
-            <Link to={`/pipelines/edit/${worker.name}/${name}`}>{name}</Link>
+            <Link to={`/pipelines/edit/${worker.settings.name}/${name}`}>
+              {name}
+            </Link>
           </Tooltip>
         );
       }
@@ -150,12 +152,12 @@ const Topics = props => {
       return isUndefined(get(res, 'data.result.state', undefined));
     };
     const topicParams = {
-      url: `${URL.TOPIC_URL}/${topicToBeDeleted}?group=${worker.name}-topic`,
+      url: `${URL.TOPIC_URL}/${topicToBeDeleted}?group=${worker.settings.name}`,
       checkFn,
     };
-    await stopTopic(`/${topicToBeDeleted}/stop?group=${worker.name}-topic`);
+    await stopTopic(`/${topicToBeDeleted}/stop?group=${worker.settings.name}`);
     await waitApi(topicParams);
-    await deleteTopic(`${topicToBeDeleted}?group=${worker.name}-topic`);
+    await deleteTopic(`${topicToBeDeleted}?group=${worker.settings.name}`);
     const isSuccess = get(deleteTopicRes(), 'data.isSuccess', false);
     setState({ deleting: false });
 
@@ -204,7 +206,7 @@ const Topics = props => {
         onConfirm={() => {
           refetch(true);
         }}
-        brokerClusterName={worker.brokerClusterName}
+        brokerClusterName={worker.settings.brokerClusterName}
         worker={worker}
       />
 
@@ -226,8 +228,10 @@ Topics.propTypes = {
     url: PropTypes.string.isRequired,
   }).isRequired,
   worker: PropTypes.shape({
-    brokerClusterName: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
+    settings: PropTypes.shape({
+      brokerClusterName: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+    }).isRequired,
   }).isRequired,
 };
 

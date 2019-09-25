@@ -25,8 +25,8 @@ const setup = () => {
   const topicName = generate.serviceName({ prefix: 'topic' });
   const pipelineName = generate.serviceName({ prefix: 'pi' });
 
-  const pipelineGroup = `${workerClusterName}-${pipelineName}`;
-  const topicGroup = `${workerClusterName}-topic`;
+  const pipelineGroup = `${workerClusterName}${pipelineName}`;
+  const topicGroup = workerClusterName;
 
   cy.createNode({
     name: nodeName,

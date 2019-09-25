@@ -280,7 +280,7 @@ export const useTestConfig = props => {
       target: values.topicKeys,
     });
 
-    const group = `${workerClusterName}-topic`;
+    const group = workerClusterName;
     const topicKeys = Array.isArray(topic) ? topic : [{ group, name: topic }];
 
     const _values = changeToken({
@@ -474,7 +474,7 @@ export const handleSave = async (props, values, showMessage) => {
     target: values.topicKeys,
   });
 
-  const topicGroup = `${workerClusterName}-topic`;
+  const topicGroup = workerClusterName;
   const topicKeys = Array.isArray(topic)
     ? topic
     : [{ group: topicGroup, name: topic }];

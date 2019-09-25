@@ -86,7 +86,7 @@ class TestTopicApi extends OharaTest with Matchers {
        """.stripMargin.parseJson)
 
     creation.group shouldBe GROUP_DEFAULT
-    creation.name.length shouldBe 10
+    creation.name.length shouldBe LIMIT_OF_KEY_LENGTH / 2
     creation.brokerClusterKey shouldBe None
     creation.numberOfPartitions shouldBe TopicApi.DEFAULT_NUMBER_OF_PARTITIONS
     creation.numberOfReplications shouldBe TopicApi.DEFAULT_NUMBER_OF_REPLICATIONS
@@ -144,4 +144,14 @@ class TestTopicApi extends OharaTest with Matchers {
 
   @Test
   def emptyTags(): Unit = TopicApi.access.request.tags(Map.empty)
+
+  @Test
+  def testNameLimit(): Unit = an[DeserializationException] should be thrownBy
+    TopicApi.access
+      .hostname(CommonUtils.randomString())
+      .port(CommonUtils.availablePort())
+      .request
+      .name(CommonUtils.randomString(LIMIT_OF_KEY_LENGTH))
+      .group(CommonUtils.randomString(LIMIT_OF_KEY_LENGTH))
+      .creation
 }

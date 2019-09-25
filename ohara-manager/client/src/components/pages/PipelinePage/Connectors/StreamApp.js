@@ -119,8 +119,8 @@ const StreamApp = props => {
     }
 
     const { workerClusterName } = props.pipeline.tags;
-    const topicGroup = `${workerClusterName}-topic`;
-    const streamJarGroup = `${workerClusterName}-streamjar`;
+    const topicGroup = workerClusterName;
+    const streamJarGroup = workerClusterName;
     const fromKey = isEmpty(fromTopic)
       ? fromTopic
       : [{ group: topicGroup, name: fromTopic[0] }];

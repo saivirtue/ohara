@@ -61,7 +61,7 @@ class TestConnectorApi extends OharaTest with Matchers {
       """.stripMargin.parseJson)
 
     creation.group shouldBe GROUP_DEFAULT
-    creation.name.length shouldBe 10
+    creation.name.length shouldBe LIMIT_OF_KEY_LENGTH / 2
     creation.workerClusterKey.get.name() shouldBe workerClusterName
     creation.className shouldBe className
     creation.columns shouldBe Seq.empty
@@ -205,7 +205,7 @@ class TestConnectorApi extends OharaTest with Matchers {
   def parseStaleConfigs(): Unit = {
     val creationRequest = ConnectorApi.CONNECTOR_CREATION_FORMAT.read(s"""
           |  {
-          |    "name": "ftp source",
+          |    "name": "ftpsource",
           |    "$CONNECTOR_CLASS_KEY": "${CommonUtils.randomString()}",
           |    "$COLUMNS_KEY": [
           |    {
@@ -341,7 +341,7 @@ class TestConnectorApi extends OharaTest with Matchers {
   def testDefaultNumberOfTasks(): Unit =
     ConnectorApi.CONNECTOR_CREATION_FORMAT.read(s"""
       |  {
-      |    "name": "ftp source",
+      |    "name": "ftpsource",
       |    "$CONNECTOR_CLASS_KEY": "com.island.ohara.connector.ftp.FtpSource"
       |  }
       |     """.stripMargin.parseJson).numberOfTasks shouldBe 1

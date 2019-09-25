@@ -69,7 +69,7 @@ export const topics = ({
       numberOfPartitions: number(),
       numberOfReplications: number(),
       brokerClusterName,
-      group: `${workspaceName}-topic`,
+      group: workspaceName,
     };
 
     topics.push(topic);
@@ -88,11 +88,12 @@ export const streamApps = ({
     count--;
 
     const streamApp = {
-      group: `${workspaceName}-streamjar`,
+      group: workspaceName,
       lastModified: date.past(),
       name: serviceName(),
       size: number(),
       url: url(),
+      tags: { type: 'streamjar' },
     };
 
     streamApps.push(streamApp);

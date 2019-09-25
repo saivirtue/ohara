@@ -294,25 +294,18 @@ object TopicApi {
     override def tags: Map[String, JsValue] = settings.tags.get
   }
 
-  implicit val TOPIC_CREATION_FORMAT: OharaJsonFormat[Creation] = JsonRefiner[Creation]
-    .format(new RootJsonFormat[Creation] {
-      override def read(json: JsValue): Creation = new Creation(noJsNull(json.asJsObject.fields))
-      override def write(obj: Creation): JsValue = JsObject(obj.settings)
-    })
-    .stringRestriction(Set(GROUP_KEY, NAME_KEY))
-    .withNumber()
-    .withCharset()
-    .withDot()
-    .withDash()
-    .withUnderLine()
-    .toRefiner
-    .nullToInt(NUMBER_OF_PARTITIONS_KEY, DEFAULT_NUMBER_OF_PARTITIONS)
-    .nullToInt(NUMBER_OF_REPLICATIONS_KEY, DEFAULT_NUMBER_OF_REPLICATIONS)
-    .rejectEmptyString()
-    .nullToString(GROUP_KEY, () => GROUP_DEFAULT)
-    .nullToString(NAME_KEY, () => CommonUtils.randomString(10))
-    .nullToEmptyObject(TAGS_KEY)
-    .refine
+  implicit val TOPIC_CREATION_FORMAT: OharaJsonFormat[Creation] =
+    // this object is open to user define the (group, name) in UI, we need to handle the key rules
+    basicRulesOfKey[Creation]
+      .format(new RootJsonFormat[Creation] {
+        override def read(json: JsValue): Creation = new Creation(noJsNull(json.asJsObject.fields))
+        override def write(obj: Creation): JsValue = JsObject(obj.settings)
+      })
+      .nullToInt(NUMBER_OF_PARTITIONS_KEY, DEFAULT_NUMBER_OF_PARTITIONS)
+      .nullToInt(NUMBER_OF_REPLICATIONS_KEY, DEFAULT_NUMBER_OF_REPLICATIONS)
+      .rejectEmptyString()
+      .nullToEmptyObject(TAGS_KEY)
+      .refine
 
   import MetricsApi._
 

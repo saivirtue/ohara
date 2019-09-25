@@ -232,7 +232,7 @@ describe('Worker API', () => {
 
     cy.fetchWorkers().then(response => {
       const targetWorker = response.data.result.find(
-        worker => worker.name === workerClusterName,
+        worker => worker.settings.name === workerClusterName,
       );
 
       expect(targetWorker).to.be.undefined;

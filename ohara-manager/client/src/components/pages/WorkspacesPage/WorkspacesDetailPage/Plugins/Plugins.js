@@ -48,7 +48,7 @@ const Plugins = props => {
     refetch: jarRefetch,
   } = useApi.useFetchApi(URL.FILE_URL);
   const jars = get(jarsRes, 'data.result', []).filter(
-    jar => jar.group === `${worker.settings.name}-plugin`,
+    jar => jar.tags.type === 'plugin',
   );
 
   const [workerActions, setWorkerActions] = useState([]);
@@ -88,7 +88,8 @@ const Plugins = props => {
   const uploadJar = async file => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('group', `${worker.settings.name}-plugin`);
+    formData.append('group', worker.settings.name);
+    formData.append('tags', '{"type":"plugin"}');
     await uploadApi(formData);
 
     const isSuccess = get(getJarRes(), 'data.isSuccess', false);
@@ -103,7 +104,7 @@ const Plugins = props => {
 
     const isDuplicate = () =>
       jars
-        .filter(jar => jar.group.split('-')[0] === worker.settings.name)
+        .filter(jar => jar.tags.type === 'plugin')
         .some(jar => jar.name === file.name);
 
     if (isDuplicate()) {
@@ -212,7 +213,7 @@ const Plugins = props => {
   });
 
   const jarRows = jars
-    .filter(jar => jar.group.split('-')[0] === worker.settings.name)
+    .filter(jar => jar.tags.type === 'plugin')
     .filter(
       jar =>
         !worker.settings.jarInfos
@@ -232,9 +233,7 @@ const Plugins = props => {
 
   const handleDelete = async () => {
     if (jarNameToBeDeleted) {
-      await deleteApi(
-        `${jarNameToBeDeleted}?group=${worker.settings.name}-plugin`,
-      );
+      await deleteApi(`${jarNameToBeDeleted}?group=${worker.settings.name}`);
       const isSuccess = get(getDeleteRes(), 'data.isSuccess', false);
       setDeleting(false);
 
@@ -268,7 +267,7 @@ const Plugins = props => {
 
   const handleDiscard = async () => {
     const newJar = jars
-      .filter(jar => jar.group.split('-')[0] === worker.settings.name)
+      .filter(jar => jar.tags.type === 'plugin')
       .filter(
         jar =>
           !worker.settings.jarInfos
@@ -277,7 +276,7 @@ const Plugins = props => {
       );
 
     newJar.forEach(jar =>
-      deleteApi(`${jar.name}?group=${worker.settings.name}-plugin`),
+      deleteApi(`${jar.name}?group=${worker.settings.name}`),
     );
 
     await commonUtils.sleep(500);

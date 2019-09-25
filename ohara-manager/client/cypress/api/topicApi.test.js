@@ -26,9 +26,9 @@ const setup = () => {
   const workerClusterName = generate.serviceName({ prefix: 'wk' });
   const topicName = generate.serviceName({ prefix: 'topic' });
 
-  // The worker is not required in the test, so we're useing `workerClusterName`
+  // The worker is not required in the test, but we need to use `workerClusterName`
   // as the topic group to mimic the behvior of our UI code
-  const topicGroup = `${workerClusterName}-topic`;
+  const topicGroup = workerClusterName;
 
   cy.createNode({
     name: nodeName,

@@ -306,6 +306,8 @@ describe('PipelineEditPage', () => {
       .get('g.edgePath')
       .should('have.length', 1);
 
+    cy.wait(1000); // Temp workaround, need this to make sure Cypress can get the right element to work on
+
     cy.getByText('FtpSource')
       .click({ force: true })
       .wait('@getConnector')
@@ -358,6 +360,8 @@ describe('PipelineEditPage', () => {
       .click()
       .wait('@putPipeline');
 
+    cy.wait(1000); // Temp workaround, need this to make sure Cypress can get the right element to work on
+
     cy.getByText('HDFSSink')
       .click({ force: true })
       .wait('@getConnector')
@@ -371,6 +375,8 @@ describe('PipelineEditPage', () => {
       .wait('@putPipeline')
       .get('g.edgePath')
       .should('have.length', 1);
+
+    cy.wait(1000); // Temp workaround, need this to make sure Cypress can get the right element to work on
 
     cy.getByText('JDBCSourceConnector')
       .click({ force: true })

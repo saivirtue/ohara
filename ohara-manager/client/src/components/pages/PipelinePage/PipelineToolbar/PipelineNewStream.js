@@ -48,7 +48,7 @@ const PipelineNewStream = forwardRef((props, ref) => {
     pipelineGroup,
     brokerClusterName,
   } = props;
-  const jarGroup = `${workerClusterName}-streamjar`;
+  const jarGroup = workerClusterName;
 
   useEffect(() => {
     const fetchJars = async () => {
@@ -90,7 +90,7 @@ const PipelineNewStream = forwardRef((props, ref) => {
 
     const connector = {
       jarKey: { group, name },
-      className: 'streamApp',
+      className: 'stream',
       typeName: 'stream',
     };
 

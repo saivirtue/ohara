@@ -40,6 +40,7 @@ describe('<Overview />', () => {
   const jars = {
     name: generate.name(),
     size: generate.number(),
+    tags: { type: 'streamjar' },
   };
 
   const connectors = generate.connectors();
@@ -72,7 +73,7 @@ describe('<Overview />', () => {
   };
 
   jest.spyOn(useApi, 'useFetchApi').mockImplementation(url => {
-    if (url === `${URL.TOPIC_URL}?group=${props.worker.settings.name}-topic`) {
+    if (url === `${URL.TOPIC_URL}?group=${props.worker.settings.name}`) {
       return {
         data: {
           data: {

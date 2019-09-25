@@ -28,6 +28,10 @@ import spray.json.{JsString, JsValue, RootJsonFormat}
 import scala.concurrent.{ExecutionContext, Future}
 object NodeApi {
 
+  // We use the hostname field as "spec.hostname" label in k8s, which has a limit length <= 63
+  // also see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
+  val LIMIT_OF_HOSTNAME_LENGTH: Int = 63
+
   /**
     * node does not support group. However, we are in group world and there are many cases of inputting key (group, name)
     * to access resource. This method used to generate key for hostname of node.
@@ -70,6 +74,7 @@ object NodeApi {
       .withCharset()
       .withDot()
       .withDash()
+      .withLengthLimit(LIMIT_OF_HOSTNAME_LENGTH)
       .toRefiner
       .nullToEmptyObject(TAGS_KEY)
       .nullToAnotherValueOfKey("hostname", "name")
@@ -187,20 +192,26 @@ object NodeApi {
         this
       }
 
-      override private[v0] def creation: Creation = Creation(
-        hostname = CommonUtils.requireNonEmpty(hostname),
-        user = user.map(CommonUtils.requireNonEmpty),
-        password = password.map(CommonUtils.requireNonEmpty),
-        port = port.map(CommonUtils.requireConnectionPort),
-        tags = if (tags == null) Map.empty else tags
-      )
+      override private[v0] def creation: Creation =
+        // auto-complete the creation via our refiner
+        NODE_CREATION_JSON_FORMAT.read(
+          NODE_CREATION_JSON_FORMAT.write(Creation(
+            hostname = CommonUtils.requireNonEmpty(hostname),
+            user = user.map(CommonUtils.requireNonEmpty),
+            password = password.map(CommonUtils.requireNonEmpty),
+            port = port.map(CommonUtils.requireConnectionPort),
+            tags = if (tags == null) Map.empty else tags
+          )))
 
-      override private[v0] def updating: Updating = Updating(
-        port = port.map(CommonUtils.requireConnectionPort),
-        user = user.map(CommonUtils.requireNonEmpty),
-        password = password.map(CommonUtils.requireNonEmpty),
-        tags = Option(tags)
-      )
+      override private[v0] def updating: Updating =
+        // auto-complete the updating via our refiner
+        NODE_UPDATING_JSON_FORMAT.read(
+          NODE_UPDATING_JSON_FORMAT.write(Updating(
+            port = port.map(CommonUtils.requireConnectionPort),
+            user = user.map(CommonUtils.requireNonEmpty),
+            password = password.map(CommonUtils.requireNonEmpty),
+            tags = Option(tags)
+          )))
 
       override def create()(implicit executionContext: ExecutionContext): Future[Node] =
         exec.post[Creation, Node, ErrorApi.Error](
@@ -209,7 +220,7 @@ object NodeApi {
         )
       override def update()(implicit executionContext: ExecutionContext): Future[Node] =
         exec.put[Updating, Node, ErrorApi.Error](
-          s"${url}/${CommonUtils.requireNonEmpty(hostname)}",
+          s"$url/${CommonUtils.requireNonEmpty(hostname)}",
           updating
         )
     }

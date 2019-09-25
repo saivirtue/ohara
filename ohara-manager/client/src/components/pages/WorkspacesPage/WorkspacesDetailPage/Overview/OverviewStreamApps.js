@@ -33,7 +33,7 @@ import * as URL from 'components/controller/url';
 const OverviewStreamApps = props => {
   const { handleRedirect, workerName } = props;
   const { data: jars, loading: fetchingJars } = useApi.useFetchApi(
-    `${URL.FILE_URL}?group=${workerName}-streamjar`,
+    `${URL.FILE_URL}?group=${workerName}`,
   );
 
   return (
@@ -55,16 +55,18 @@ const OverviewStreamApps = props => {
         headers={['Jar name', 'File size(KB)']}
         isLoading={fetchingJars}
       >
-        {get(jars, 'data.result', []).map(jar => {
-          return (
-            <TableRow key={jar.name}>
-              <StyledTableCell>{jar.name}</StyledTableCell>
-              <StyledTableCell align="right">
-                {floor(divide(jar.size, 1024), 1)}
-              </StyledTableCell>
-            </TableRow>
-          );
-        })}
+        {get(jars, 'data.result', [])
+          .filter(jar => jar.tags.type === 'streamjar')
+          .map(jar => {
+            return (
+              <TableRow key={jar.name}>
+                <StyledTableCell>{jar.name}</StyledTableCell>
+                <StyledTableCell align="right">
+                  {floor(divide(jar.size, 1024), 1)}
+                </StyledTableCell>
+              </TableRow>
+            );
+          })}
       </OverviewTable>
     </>
   );

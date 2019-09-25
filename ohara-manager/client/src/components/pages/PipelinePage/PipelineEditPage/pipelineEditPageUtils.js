@@ -57,7 +57,7 @@ export const updateFlows = ({
   let group;
 
   if (kind === 'topic') {
-    group = `${workerClusterName}-topic`;
+    group = workerClusterName;
   } else if (kind === 'stream') {
     group = `${workerClusterName}${pipelineName}`;
   } else {

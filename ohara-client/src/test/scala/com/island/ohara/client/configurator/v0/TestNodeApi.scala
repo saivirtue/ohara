@@ -16,7 +16,7 @@
 
 package com.island.ohara.client.configurator.v0
 
-import com.island.ohara.client.configurator.v0.NodeApi.Node
+import com.island.ohara.client.configurator.v0.NodeApi._
 import com.island.ohara.common.rule.OharaTest
 import com.island.ohara.common.util.CommonUtils
 import org.junit.Test
@@ -316,4 +316,13 @@ class TestNodeApi extends OharaTest with Matchers {
       .fields("name")
       .convertTo[String] shouldBe hostname
   }
+
+  @Test
+  def testHostnameLimit(): Unit = an[DeserializationException] should be thrownBy
+    NodeApi.access
+      .hostname(CommonUtils.randomString())
+      .port(CommonUtils.availablePort())
+      .request
+      .hostname(CommonUtils.randomString(LIMIT_OF_HOSTNAME_LENGTH + 1))
+      .creation
 }

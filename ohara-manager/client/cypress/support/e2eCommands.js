@@ -37,7 +37,7 @@ Cypress.Commands.add('addWorker', params => {
 
   if (jarName !== undefined) {
     cy.uploadTestPlugin({ jarName, workerClusterName: workerName });
-    jarKeys = [{ name: jarName, group: `${workerName}-plugin` }];
+    jarKeys = [{ name: jarName, group: workerName }];
   }
 
   // Store the worker name in the Cypress env
@@ -128,14 +128,14 @@ Cypress.Commands.add(
         const workers = res.body;
         const currentWorkerName = workerName;
         const worker = workers.find(
-          worker => worker.name === currentWorkerName,
+          worker => worker.settings.name === currentWorkerName,
         );
 
         return worker.brokerClusterName;
       })
       .as('brokerClusterName');
 
-    const group = `${Cypress.env('WORKER_NAME')}-topic`;
+    const group = `${Cypress.env('WORKER_NAME')}`;
     cy.get('@brokerClusterName').then(brokerClusterName => {
       cy.request('POST', '/api/topics', {
         name: topicName,
@@ -157,7 +157,7 @@ Cypress.Commands.add('removeWorkers', () => {
   cy.request('GET', 'api/workers').then(response => {
     const servicePrefix = Cypress.env('servicePrefix');
     const workers = response.body.filter(worker =>
-      worker.name.includes(servicePrefix),
+      worker.settings.name.includes(servicePrefix),
     );
 
     if (isEmpty(workers)) return;
@@ -215,7 +215,8 @@ Cypress.Commands.add('uploadTestStreamAppJar', workerClusterName => {
 
       let formData = new FormData();
       formData.append('file', blob[0]);
-      formData.append('group', `${workerClusterName}-streamjar`);
+      formData.append('group', workerClusterName);
+      formData.append('tags', '{"type":"streamjar"}');
       const res = axiosInstance.post(url, formData, config);
       cy.log(res);
     });
@@ -239,14 +240,15 @@ Cypress.Commands.add('uploadTestPlugin', params => {
       blob = dataTransfer.files;
       let formData = new FormData();
       formData.append('file', blob[0]);
-      formData.append('group', `${workerClusterName}-plugin`);
+      formData.append('group', workerClusterName);
+      formData.append('tags', '{"type":"plugin"}');
       axiosInstance.post(url, formData, config);
     });
 });
 
 Cypress.Commands.add('deleteTestPlugin', params => {
   const { jarName, workerName } = params;
-  cy.request('DELETE', `api/files/${jarName}?group=${workerName}-plugin`);
+  cy.request('DELETE', `api/files/${jarName}?group=${workerName}`);
 });
 
 Cypress.Commands.add('uploadJar', (selector, fixturePath, name, type) => {

@@ -36,7 +36,7 @@ const Operate = props => {
     tags: { workerClusterName },
   } = pipeline;
 
-  const streamGroup = 'default';
+  const streamGroup = workerClusterName;
 
   const makeRequest = (action, connectors) => {
     const { sources, sinks, streams } = getConnectors(connectors);

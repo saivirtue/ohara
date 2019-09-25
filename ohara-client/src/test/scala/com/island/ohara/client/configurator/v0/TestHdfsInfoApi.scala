@@ -88,7 +88,7 @@ class TestHdfsInfoApi extends OharaTest with Matchers {
     val uri = s"file:///tmp/${CommonUtils.randomString()}"
     val update = HdfsInfoApi.HDFS_UPDATING_JSON_FORMAT.read(s"""
          |{
-         | "uri": "${uri}"
+         | "uri": "$uri"
          |}
        """.stripMargin.parseJson)
     update.uri.get shouldBe uri
@@ -103,7 +103,7 @@ class TestHdfsInfoApi extends OharaTest with Matchers {
                                                                |}
        """.stripMargin.parseJson)
     creation.group shouldBe GROUP_DEFAULT
-    creation.name.length shouldBe 10
+    creation.name.length shouldBe LIMIT_OF_KEY_LENGTH / 2
     creation.uri shouldBe uri
 
     val group = CommonUtils.randomString()
@@ -169,4 +169,15 @@ class TestHdfsInfoApi extends OharaTest with Matchers {
 
   @Test
   def emptyTags(): Unit = HdfsInfoApi.access.request.tags(Map.empty)
+
+  @Test
+  def testNameLimit(): Unit = an[DeserializationException] should be thrownBy
+    HdfsInfoApi.access
+      .hostname(CommonUtils.randomString())
+      .port(CommonUtils.availablePort())
+      .request
+      .name(CommonUtils.randomString(LIMIT_OF_KEY_LENGTH))
+      .group(CommonUtils.randomString(LIMIT_OF_KEY_LENGTH))
+      .uri(CommonUtils.randomString())
+      .creation
 }

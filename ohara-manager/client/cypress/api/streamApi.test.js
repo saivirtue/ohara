@@ -26,9 +26,8 @@ const setup = () => {
   const workerClusterName = generate.serviceName({ prefix: 'wk' });
   let streamName = generate.serviceName({ prefix: 'stream' });
 
-  // stream apps are not supporting `group` for now, so using a `default` as the group
-  const streamGroup = 'default';
-  const topicGroup = `${workerClusterName}-topic`;
+  const streamGroup = workerClusterName;
+  const topicGroup = workerClusterName;
 
   cy.createNode({
     name: nodeName,
@@ -66,9 +65,10 @@ const setup = () => {
     const params = {
       jarKey: {
         name: response.data.result.name,
-        group: workerClusterName,
+        group: streamGroup,
       },
       name: streamName,
+      group: streamGroup,
       tags: {
         name: streamName,
       },

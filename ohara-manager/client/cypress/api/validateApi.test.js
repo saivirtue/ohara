@@ -23,7 +23,7 @@ const setup = () => {
   const workerClusterName = generate.serviceName({ prefix: 'wk' });
   const topicName = generate.serviceName({ prefix: 'topic' });
 
-  const topicGroup = `${workerClusterName}-topic`;
+  const topicGroup = workerClusterName;
 
   cy.createNode({
     name: nodeName,
@@ -103,7 +103,7 @@ describe('Validate API', () => {
       params = {
         ...params,
         'connector.class': connector.className,
-        topicKeys: [{ group: 'default', name: topicName }],
+        topicKeys: [{ group: workerClusterName, name: topicName }],
         workerClusterName,
         'jio.binding.port': generate.port(),
       };

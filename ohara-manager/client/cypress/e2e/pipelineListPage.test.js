@@ -55,7 +55,7 @@ describe('PipelineListPage', () => {
     const pipelineName = generate.serviceName({ prefix: 'pi', length: 3 });
     const pipelineParams = {
       name: pipelineName,
-      group: `${Cypress.env('WORKER_NAME')}-${pipelineName}`,
+      group: `${Cypress.env('WORKER_NAME')}${pipelineName}`,
       tags: {
         workerClusterName: Cypress.env('WORKER_NAME'),
       },
@@ -78,7 +78,7 @@ describe('PipelineListPage', () => {
     const pipelineName = generate.serviceName({ prefix: 'pi', length: 3 });
     const pipelineParams = {
       name: pipelineName,
-      group: `${Cypress.env('WORKER_NAME')}-${pipelineName}`,
+      group: `${Cypress.env('WORKER_NAME')}${pipelineName}`,
       tags: {
         workerClusterName: Cypress.env('WORKER_NAME'),
       },

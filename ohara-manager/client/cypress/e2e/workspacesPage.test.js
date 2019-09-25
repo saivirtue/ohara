@@ -357,7 +357,7 @@ describe('plugin', () => {
     cy.route('GET', 'api/workers/*').as('getWorker');
     cy.route('GET', 'api/brokers/*').as('getBroker');
     cy.route('GET', 'api/zookeepers/*').as('getZookeeper');
-    cy.route('GET', 'api/topics?*').as('getTopics');
+    cy.route('GET', 'api/topics/*').as('getTopics');
     cy.route('GET', 'api/pipelines').as('getPipelines');
     cy.route('GET', 'api/connectors/*').as('getConnectors');
     cy.route('PUT', 'api/workers/*/stop').as('stopWorker');
@@ -412,7 +412,7 @@ describe('plugin', () => {
     const dumbsinkName = generate.serviceName({ prefix: 'dumbsink' });
     cy.addPipeline({
       name: pipelineName,
-      group: `${workerName}-${pipelineName}`,
+      group: `${workerName}${pipelineName}`,
       tags: {
         workerClusterName: workerName,
       },
@@ -420,66 +420,66 @@ describe('plugin', () => {
     cy.addTopic(topicName, workerName);
     cy.addConnector({
       'connector.class': 'com.island.ohara.connector.perf.PerfSource',
-      group: `${workerName}-${pipelineName}`,
+      group: `${workerName}${pipelineName}`,
       name: perfName,
       workerClusterName: workerName,
     });
     cy.putConnector({
-      url: `/${perfName}?group=${workerName}-${pipelineName}`,
+      url: `/${perfName}?group=${workerName}${pipelineName}`,
       param: {
-        topicKeys: [{ group: `${workerName}-topic`, name: topicName }],
+        topicKeys: [{ group: `${workerName}`, name: topicName }],
       },
     });
     cy.addConnector({
       'connector.class': 'com.island.ohara.it.connector.DumbSinkConnector',
-      group: `${workerName}-${pipelineName}`,
+      group: `${workerName}${pipelineName}`,
       name: dumbsinkName,
       workerClusterName: workerName,
     });
     cy.putConnector({
-      url: `/${dumbsinkName}?group=${workerName}-${pipelineName}`,
+      url: `/${dumbsinkName}?group=${workerName}${pipelineName}`,
       param: {
-        topicKeys: [{ group: `${workerName}-topic`, name: topicName }],
+        topicKeys: [{ group: `${workerName}`, name: topicName }],
       },
     });
     cy.putPipeline({
-      url: `/${pipelineName}?group=${workerName}-${pipelineName}`,
+      url: `/${pipelineName}?group=${workerName}${pipelineName}`,
       param: {
         flows: [
           {
             from: {
-              group: `${workerName}-${pipelineName}`,
+              group: `${workerName}${pipelineName}`,
               name: perfName,
             },
             to: [
               {
-                group: `${workerName}-${pipelineName}`,
+                group: `${workerName}${pipelineName}`,
                 name: topicName,
               },
             ],
           },
           {
             from: {
-              group: `${workerName}-${pipelineName}`,
+              group: `${workerName}${pipelineName}`,
               name: dumbsinkName,
             },
             to: [],
           },
           {
             from: {
-              group: `${workerName}-topic`,
+              group: `${workerName}`,
               name: topicName,
             },
-            to: [{ group: `${workerName}-topic`, name: dumbsinkName }],
+            to: [{ group: `${workerName}`, name: dumbsinkName }],
           },
         ],
       },
     });
     cy.putConnector({
-      url: `/${perfName}/start?group=${workerName}-${pipelineName}`,
+      url: `/${perfName}/start?group=${workerName}${pipelineName}`,
     });
     cy.putConnector({
-      url: `/${dumbsinkName}/start?group=${workerName}-${pipelineName}`,
+      url: `/${dumbsinkName}/start?group=${workerName}${pipelineName}`,
     });
     cy.visit(WORKSPACES)
       .wait('@getWorkers')

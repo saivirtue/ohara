@@ -36,7 +36,9 @@ const usePlugin = () => {
 
     //Get the connector in execution
     const runningConnector = res
-      .filter(pipeline => pipeline.tags.workerClusterName === worker.name)
+      .filter(
+        pipeline => pipeline.tags.workerClusterName === worker.settings.name,
+      )
       .map(pipeline => pipeline.objects)
       .reduce((start, next) => start.concat(next), [])
       .filter(

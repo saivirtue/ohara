@@ -39,7 +39,7 @@ const StreamApp = props => {
     URL.FILE_URL,
   );
   const jars = get(jarsRes, 'data.result', []).filter(
-    jar => jar.group === `${workspaceName}-streamjar`,
+    jar => jar.tags.type === 'streamjar',
   );
   const { getData: getJarRes, uploadApi } = useApi.useUploadApi(URL.FILE_URL);
   const { getData: getDeleteRes, deleteApi } = useApi.useDeleteApi(
@@ -50,7 +50,8 @@ const StreamApp = props => {
   const uploadJar = async file => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('group', `${workspaceName}-streamjar`);
+    formData.append('group', workspaceName);
+    formData.append('tags', '{"type":"streamjar"}');
     await uploadApi(formData);
 
     const isSuccess = get(getJarRes(), 'data.isSuccess', false);
@@ -109,7 +110,7 @@ const StreamApp = props => {
 
   const handleDelete = async () => {
     if (jarNameToBeDeleted) {
-      await deleteApi(`${jarNameToBeDeleted}?group=${workspaceName}-streamjar`);
+      await deleteApi(`${jarNameToBeDeleted}?group=${workspaceName}`);
       const isSuccess = get(getDeleteRes(), 'data.isSuccess', false);
       setDeleting(false);
 

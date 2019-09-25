@@ -125,11 +125,11 @@ package object v0 {
     }
 
   /**
-    * use basic check rules of object key for json refiner.
-    * 1) name and group must satisfy the regex [a-z0-9]
-    * 2) name will use randomString if not defined.
-    * 3) group will use defaultGroup if not defined.
-    * 4) name length + group length <= LIMIT_OF_KEY_LENGTH
+    * use basic check rules of object key for json refiner:
+    * <p> 1) name and group must satisfy the regex [a-z0-9]
+    * <p> 2) name will use randomString if not defined.
+    * <p> 3) group will use defaultGroup if not defined.
+    * <p> 4) name length + group length <= LIMIT_OF_KEY_LENGTH
     *
     * @tparam T type of object
     * @return json refiner object
