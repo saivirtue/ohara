@@ -274,7 +274,6 @@ Cypress.Commands.add('deleteAllServices', () => {
 
     if (!isEmpty(workers)) {
       workers.forEach(worker => {
-<<<<<<< HEAD
         const { state, settings } = worker;
         const { name } = settings;
 
@@ -283,12 +282,6 @@ Cypress.Commands.add('deleteAllServices', () => {
         }
 
         cy.request('DELETE', `api/workers/${name}`);
-=======
-        if (!isUndefined(worker.state)) {
-          cy.stopWorker(worker.settings.name);
-        }
-        cy.request('DELETE', `api/workers/${worker.settings.name}`);
->>>>>>>  #2735 [Manager] Avoid using illegal characters in the UI
       });
     }
   });
