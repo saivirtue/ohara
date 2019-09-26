@@ -21,6 +21,7 @@ import com.island.ohara.client.configurator.v0.ContainerApi.ContainerInfo
 import com.island.ohara.client.configurator.v0.NodeApi.Node
 import com.island.ohara.client.configurator.v0.{BrokerApi, TopicApi, ZookeeperApi}
 import com.island.ohara.common.rule.OharaTest
+import com.island.ohara.common.setting.ObjectKey
 import com.island.ohara.common.util.CommonUtils
 import org.junit.Test
 import org.scalatest.Matchers
@@ -30,6 +31,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
 class TestBrokerCreator extends OharaTest with Matchers {
+
+  private[this] val zkKey: ObjectKey = ObjectKey.of(CommonUtils.randomString(), CommonUtils.randomString())
   private[this] val TIMEOUT: FiniteDuration = 30 seconds
 
   private[this] def node(hostname: String): Node = Node(
@@ -89,12 +92,7 @@ class TestBrokerCreator extends OharaTest with Matchers {
 
   @Test
   def nullZkClusterName(): Unit = {
-    an[NullPointerException] should be thrownBy bkCreator().zookeeperClusterName(null)
-  }
-
-  @Test
-  def emptyZkClusterName(): Unit = {
-    an[IllegalArgumentException] should be thrownBy bkCreator().zookeeperClusterName("")
+    an[NullPointerException] should be thrownBy bkCreator().zookeeperClusterKey(null)
   }
 
   @Test
@@ -127,7 +125,7 @@ class TestBrokerCreator extends OharaTest with Matchers {
     .imageName(CommonUtils.randomString(10))
     .name(CommonUtils.randomString(10))
     .group(CommonUtils.randomString(10))
-    .zookeeperClusterName("zk")
+    .zookeeperClusterKey(zkKey)
     .exporterPort(CommonUtils.availablePort())
     .clientPort(CommonUtils.availablePort())
     .nodeName(CommonUtils.randomString)
@@ -160,7 +158,7 @@ class TestBrokerCreator extends OharaTest with Matchers {
       settings = BrokerApi.access.request
         .name(CommonUtils.randomString(10))
         .imageName(CommonUtils.randomString)
-        .zookeeperClusterName(CommonUtils.randomString)
+        .zookeeperClusterKey(zkKey)
         .nodeNames(nodeNames)
         .creation
         .settings,
@@ -187,7 +185,7 @@ class TestBrokerCreator extends OharaTest with Matchers {
           .name("cluster123")
           .group(CommonUtils.randomString(10))
           .imageName(BrokerApi.IMAGE_NAME_DEFAULT)
-          .zookeeperClusterName("zk123456")
+          .zookeeperClusterKey(zkKey)
           .clientPort(9092)
           .exporterPort(9093)
           .jmxPort(9094)
@@ -211,7 +209,7 @@ class TestBrokerCreator extends OharaTest with Matchers {
           .name("cluster123")
           .group(CommonUtils.randomString(10))
           .imageName(BrokerApi.IMAGE_NAME_DEFAULT)
-          .zookeeperClusterName(FakeBrokerCollie.zookeeperClusterName)
+          .zookeeperClusterKey(FakeBrokerCollie.zookeeperClusterKey)
           .clientPort(9092)
           .exporterPort(9093)
           .jmxPort(9094)
@@ -256,9 +254,11 @@ class TestBrokerCreator extends OharaTest with Matchers {
         "containername",
         "",
         Seq.empty,
-        Map(BrokerApi.ID_KEY -> "0",
-            BrokerApi.CLIENT_PORT_KEY -> "9092",
-            BrokerApi.ZOOKEEPER_CLUSTER_NAME_KEY -> FakeBrokerCollie.zookeeperClusterName),
+        Map(
+          BrokerApi.ID_KEY -> "0",
+          BrokerApi.CLIENT_PORT_KEY -> "9092",
+          BrokerApi.ZOOKEEPER_CLUSTER_KEY_KEY -> ObjectKey.toJsonString(FakeBrokerCollie.zookeeperClusterKey)
+        ),
         "host"
       ))
 
@@ -271,7 +271,7 @@ class TestBrokerCreator extends OharaTest with Matchers {
           // In FakeBrokerCollie, we create a cluster without specified group
           // we should use default group here to fetch the same cluster
           .group(com.island.ohara.client.configurator.v0.GROUP_DEFAULT)
-          .zookeeperClusterName(FakeBrokerCollie.zookeeperClusterName)
+          .zookeeperClusterKey(FakeBrokerCollie.zookeeperClusterKey)
           .clientPort(9092)
           .jmxPort(9093)
           .exporterPort(9094)

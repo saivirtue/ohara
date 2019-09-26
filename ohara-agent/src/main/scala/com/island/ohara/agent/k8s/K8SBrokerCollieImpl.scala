@@ -64,9 +64,9 @@ private class K8SBrokerCollieImpl(node: NodeCollie, zkCollie: ZookeeperCollie, k
   override protected def toClusterDescription(key: ObjectKey, containers: Seq[ContainerInfo])(
     implicit executionContext: ExecutionContext): Future[BrokerClusterInfo] = toBrokerCluster(key, containers)
 
-  protected override def zookeeperContainers(zkClusterName: String)(
+  protected override def zookeeperContainers(zkClusterKey: ObjectKey)(
     implicit executionContext: ExecutionContext): Future[Seq[ContainerInfo]] =
-    zkCollie.cluster(zkClusterName).map(_._2)
+    zkCollie.cluster(zkClusterKey).map(_._2)
 
   /**
     * Please setting nodeCollie to implement class

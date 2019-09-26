@@ -18,6 +18,7 @@ package com.island.ohara.client.configurator.v0
 
 import com.island.ohara.client.configurator.v0.BrokerApi.BrokerClusterInfo
 import com.island.ohara.common.rule.OharaTest
+import com.island.ohara.common.setting.ObjectKey
 import com.island.ohara.common.util.CommonUtils
 import org.junit.Test
 import org.scalatest.Matchers
@@ -71,11 +72,7 @@ class TestBrokerApi extends OharaTest with Matchers {
   def emptyGroup(): Unit = an[IllegalArgumentException] should be thrownBy access.group("")
 
   @Test
-  def nullZookeeperClusterName(): Unit = an[NullPointerException] should be thrownBy access.zookeeperClusterName(null)
-
-  @Test
-  def emptyZookeeperClusterName(): Unit =
-    an[IllegalArgumentException] should be thrownBy access.zookeeperClusterName("")
+  def nullZookeeperClusterKey(): Unit = an[NullPointerException] should be thrownBy access.zookeeperClusterKey(null)
 
   @Test
   def nullImageName(): Unit = an[NullPointerException] should be thrownBy access.imageName(null)
@@ -106,12 +103,12 @@ class TestBrokerApi extends OharaTest with Matchers {
     val clientPort = CommonUtils.availablePort()
     val jmxPort = CommonUtils.availablePort()
     val exporterPort = CommonUtils.availablePort()
-    val zookeeperClusterName = CommonUtils.randomString()
+    val zkKey = ObjectKey.of(CommonUtils.randomString(), CommonUtils.randomString())
     val nodeName = CommonUtils.randomString()
     val creation = access
       .name(name)
       .group(group)
-      .zookeeperClusterName(zookeeperClusterName)
+      .zookeeperClusterKey(zkKey)
       .imageName(imageName)
       .clientPort(clientPort)
       .jmxPort(jmxPort)
@@ -124,7 +121,7 @@ class TestBrokerApi extends OharaTest with Matchers {
     creation.clientPort shouldBe clientPort
     creation.jmxPort shouldBe jmxPort
     creation.exporterPort shouldBe exporterPort
-    creation.zookeeperClusterName.get shouldBe zookeeperClusterName
+    creation.zookeeperClusterKey.get shouldBe zkKey
     creation.nodeNames.head shouldBe nodeName
   }
 
@@ -149,7 +146,7 @@ class TestBrokerApi extends OharaTest with Matchers {
     creation.group shouldBe GROUP_DEFAULT
     creation.name.length shouldBe LIMIT_OF_KEY_LENGTH / 2
     creation.imageName shouldBe BrokerApi.IMAGE_NAME_DEFAULT
-    creation.zookeeperClusterName shouldBe None
+    creation.zookeeperClusterKey shouldBe None
     creation.nodeNames.size shouldBe 1
     creation.nodeNames.head shouldBe nodeName
     creation.clientPort should not be 0
@@ -180,7 +177,7 @@ class TestBrokerApi extends OharaTest with Matchers {
     creation2.imageName shouldBe BrokerApi.IMAGE_NAME_DEFAULT
     creation2.nodeNames.size shouldBe 1
     creation2.nodeNames.head shouldBe nodeName
-    creation2.zookeeperClusterName.get shouldBe zookeeperClusterName
+    creation2.zookeeperClusterKey.get.name() shouldBe zookeeperClusterName
     creation2.clientPort shouldBe clientPort
     creation2.exporterPort shouldBe exporterPort
     creation2.jmxPort shouldBe jmxPort
@@ -463,10 +460,42 @@ class TestBrokerApi extends OharaTest with Matchers {
   }
 
   @Test
+  def testInvalidBrokerClusterKey(): Unit = {
+    an[DeserializationException] should be thrownBy BrokerApi.BROKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "zookeeperClusterKey": "",
+      |    "nodeNames": ["n1"]
+      |  }
+      """.stripMargin.parseJson)
+  }
+
+  @Test
+  def testBrokerClusterKeyWithDefaultGroup(): Unit = {
+    val name = CommonUtils.randomString()
+    BrokerApi.BROKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "zookeeperClusterKey": "$name",
+      |    "nodeNames": ["n1"]
+      |  }
+      """.stripMargin.parseJson).zookeeperClusterKey.get shouldBe ObjectKey.of(GROUP_DEFAULT, name)
+  }
+
+  @Test
+  def testStaleBrokerClusterName(): Unit = {
+    val name = CommonUtils.randomString()
+    BrokerApi.BROKER_CREATION_JSON_FORMAT.read(s"""
+      |  {
+      |    "zookeeperClusterName": "$name",
+      |    "nodeNames": ["n1"]
+      |  }
+      """.stripMargin.parseJson).zookeeperClusterKey.get shouldBe ObjectKey.of(GROUP_DEFAULT, name)
+  }
+
+  @Test
   def testDefaultUpdate(): Unit = {
     val data = access.name(CommonUtils.randomString(10)).updating
     data.imageName.isEmpty shouldBe true
-    data.zookeeperClusterName.isEmpty shouldBe true
+    data.zookeeperClusterKey.isEmpty shouldBe true
     data.exporterPort.isEmpty shouldBe true
     data.jmxPort.isEmpty shouldBe true
     data.clientPort.isEmpty shouldBe true
@@ -504,8 +533,7 @@ class TestBrokerApi extends OharaTest with Matchers {
     val name = CommonUtils.randomString(5)
     val res = BrokerApi.BROKER_CLUSTER_INFO_JSON_FORMAT.write(
       BrokerClusterInfo(
-        settings =
-          BrokerApi.access.request.name(name).zookeeperClusterName("zk1").nodeNames(Set("n1")).creation.settings,
+        settings = BrokerApi.access.request.name(name).nodeNames(Set("n1")).creation.settings,
         aliveNodes = Set.empty,
         state = None,
         error = None,

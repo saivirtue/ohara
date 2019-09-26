@@ -82,7 +82,7 @@ class TestMixedFakeCollie extends WithBrokerWorker with Matchers {
           .port(configurator.port)
           .request
           .name(CommonUtils.randomString(10))
-          .zookeeperClusterName(zk.name)
+          .zookeeperClusterKey(zk.key)
           .nodeNames(nodes.map(_.name).toSet)
           .create(),
         20 seconds

@@ -71,13 +71,13 @@ trait BrokerCollie extends Collie[BrokerClusterInfo] {
                   if (previous != newValue) throw new IllegalArgumentException(s"previous:$previous new:$newValue")
 
                 def check(key: String, newValue: String): Unit = {
-                  val previous = container.environments(key)
+                  val previous = CommonUtils.fromEnvString(container.environments(key))
                   if (previous != newValue) throw new IllegalArgumentException(s"previous:$previous new:$newValue")
                 }
 
                 checkValue(container.imageName, creation.imageName)
                 check(BrokerApi.CLIENT_PORT_KEY, creation.clientPort.toString)
-                check(BrokerApi.ZOOKEEPER_CLUSTER_NAME_KEY, creation.zookeeperClusterName.get)
+                check(BrokerApi.ZOOKEEPER_CLUSTER_KEY_KEY, ObjectKey.toJsonString(creation.zookeeperClusterKey.get))
             }
             existNodes
         }
@@ -91,14 +91,14 @@ trait BrokerCollie extends Collie[BrokerClusterInfo] {
             (existNodes,
              // find the nodes which have not run the services
              nodes.filterNot(n => existNodes.exists(_._1.hostname == n._1.hostname)),
-             zookeeperContainers(creation.zookeeperClusterName.get))
+             zookeeperContainers(creation.zookeeperClusterKey.get))
         }
         .flatMap {
           case (existNodes, newNodes, zkContainers) =>
             zkContainers
               .flatMap(zkContainers => {
                 if (zkContainers.isEmpty)
-                  throw new IllegalArgumentException(s"zookeeper:${creation.zookeeperClusterName.get} does not exist")
+                  throw new IllegalArgumentException(s"zookeeper:${creation.zookeeperClusterKey.get} does not exist")
                 if (newNodes.isEmpty) Future.successful(Seq.empty)
                 else {
                   val zookeepers = zkContainers
@@ -295,11 +295,11 @@ trait BrokerCollie extends Collie[BrokerClusterInfo] {
   /**
     * In creation progress, broker has to check the existence of zookeeper and then fetch something important from zookeeper
     * containers.
-    * @param zkClusterName zookeeper cluster name
+    * @param zkClusterKey zookeeper cluster key
     * @param executionContext execution context
     * @return
     */
-  protected def zookeeperContainers(zkClusterName: String)(
+  protected def zookeeperContainers(zkClusterKey: ObjectKey)(
     implicit executionContext: ExecutionContext): Future[Seq[ContainerInfo]]
 
   /**

@@ -68,7 +68,7 @@ class TestPrometheus extends IntegrationTest with Matchers {
                     () => result(clusterCollie.zookeeperCollie.containers(zkDesc.key)),
                     zkDesc.name)
       startBroker(
-        zkDesc.name,
+        zkDesc.key,
         (exporterPort, bkCluster) => {
           assertCluster(() => result(clusterCollie.brokerCollie.clusters()).keys.toSeq,
                         () => result(clusterCollie.brokerCollie.containers(zkDesc.key)),
@@ -116,7 +116,7 @@ class TestPrometheus extends IntegrationTest with Matchers {
       zookeeperCollie.remove(ObjectKey.of(com.island.ohara.client.configurator.v0.GROUP_DEFAULT, clusterName)))
   }
 
-  def startBroker(zkClusterName: String, f: (Int, BrokerClusterInfo) => Unit): Unit = {
+  def startBroker(zkClusterKey: ObjectKey, f: (Int, BrokerClusterInfo) => Unit): Unit = {
     val clusterName = CommonUtils.randomString(10)
     val clientPort = CommonUtils.availablePort()
     val exporterPort = CommonUtils.availablePort()
@@ -131,7 +131,7 @@ class TestPrometheus extends IntegrationTest with Matchers {
           .name(clusterName)
           .clientPort(clientPort)
           .exporterPort(exporterPort)
-          .zookeeperClusterName(zkClusterName)
+          .zookeeperClusterKey(zkClusterKey)
           .nodeName(result(nodeCollie.nodes()).head.name)
           .create()
           .flatMap(_ => brokerCollie.cluster(clusterName).map(_._1))

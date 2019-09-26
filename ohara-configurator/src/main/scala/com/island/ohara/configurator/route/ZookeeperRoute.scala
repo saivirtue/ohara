@@ -91,17 +91,16 @@ object ZookeeperRoute {
     executionContext: ExecutionContext): HookOfAction = (key: ObjectKey, _: String, _: Map[String, String]) =>
     store
       .value[ZookeeperClusterInfo](key)
-      .flatMap(
-        zkClusterInfo =>
-          clusterCollie.brokerCollie
-            .clusters()
-            .map(
-              _.keys
-                .find(_.zookeeperClusterName == zkClusterInfo.name)
-                .map(cluster =>
-                  throw new IllegalArgumentException(
-                    s"you can't remove zookeeper cluster:${zkClusterInfo.name} since it is used by broker cluster:${cluster.name}"))
-          ))
+      .flatMap(zkClusterInfo =>
+        clusterCollie.brokerCollie
+          .clusters()
+          .map(
+            _.keys
+              .find(_.zookeeperClusterKey == zkClusterInfo.key)
+              .map(cluster =>
+                throw new IllegalArgumentException(
+                  s"you can't remove zookeeper cluster:${zkClusterInfo.key} since it is used by broker cluster:${cluster.name}"))
+        ))
 
   def apply(implicit store: DataStore,
             meterCache: MeterCache,

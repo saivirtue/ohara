@@ -105,7 +105,7 @@ class TestLoadCustomJarToWorkerCluster extends IntegrationTest with Matchers {
     val bkCluster = result(
       bkApi.request
         .name(nameHolder.generateClusterName())
-        .zookeeperClusterName(zkCluster.name)
+        .zookeeperClusterKey(zkCluster.key)
         .nodeNames(nodes.map(_.name).toSet)
         .create()
         .flatMap(info => bkApi.start(info.key).flatMap(_ => bkApi.get(info.key))))

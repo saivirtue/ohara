@@ -16,12 +16,14 @@
 
 package com.island.ohara.client.configurator.v0
 
+import java.util.Objects
+
 import com.island.ohara.client.configurator.v0.MetricsApi.Metrics
 import com.island.ohara.common.annotations.Optional
 import com.island.ohara.common.setting.{ObjectKey, SettingDef}
 import com.island.ohara.common.util.{CommonUtils, VersionUtils}
 import spray.json.DefaultJsonProtocol._
-import spray.json.{JsNumber, JsObject, JsString, JsValue, RootJsonFormat}
+import spray.json.{JsNumber, JsObject, JsValue, RootJsonFormat}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -48,10 +50,13 @@ object BrokerApi {
   private[ohara] val JMX_HOSTNAME_KEY: String = "jmxHostname"
 
   /**
-    * internal key used to save the zookeeper cluster name.
+    * internal key used to save the zookeeper cluster key.
     * All nodes of broker cluster should have this environment variable.
     */
-  private[ohara] val ZOOKEEPER_CLUSTER_NAME_KEY: String = "zookeeperClusterName"
+  private[ohara] val ZOOKEEPER_CLUSTER_KEY_KEY: String = "zookeeperClusterKey"
+
+  // TODO: remove this stale field (see https://github.com/oharastream/ohara/issues/2731)
+  private[this] val ZOOKEEPER_CLUSTER_NAME_KEY: String = "zookeeperClusterName"
 
   final class Creation(val settings: Map[String, JsValue]) extends ClusterCreation {
 
@@ -76,7 +81,7 @@ object BrokerApi {
     def exporterPort: Int = settings.exporterPort.get
     def clientPort: Int = settings.clientPort.get
     def jmxPort: Int = settings.jmxPort.get
-    def zookeeperClusterName: Option[String] = settings.zookeeperClusterName
+    def zookeeperClusterKey: Option[ObjectKey] = settings.zookeeperClusterKey
   }
 
   /**
@@ -94,7 +99,6 @@ object BrokerApi {
       .requireBindPort(EXPORTER_PORT_KEY)
       .nullToRandomPort(JMX_PORT_KEY)
       .requireBindPort(JMX_PORT_KEY)
-      .rejectEmptyString(ZOOKEEPER_CLUSTER_NAME_KEY)
       .refine
 
   final class Updating(val settings: Map[String, JsValue]) extends ClusterUpdating {
@@ -113,8 +117,15 @@ object BrokerApi {
     def exporterPort: Option[Int] = noJsNull(settings).get(EXPORTER_PORT_KEY).map(_.convertTo[Int])
     def clientPort: Option[Int] = noJsNull(settings).get(CLIENT_PORT_KEY).map(_.convertTo[Int])
     def jmxPort: Option[Int] = noJsNull(settings).get(JMX_PORT_KEY).map(_.convertTo[Int])
-    def zookeeperClusterName: Option[String] =
+
+    // TODO: remove this stale field (see https://github.com/oharastream/ohara/issues/2731)
+    private[this] def zookeeperClusterName: Option[String] =
       noJsNull(settings).get(ZOOKEEPER_CLUSTER_NAME_KEY).map(_.convertTo[String])
+
+    def zookeeperClusterKey: Option[ObjectKey] = noJsNull(settings)
+      .get(ZOOKEEPER_CLUSTER_KEY_KEY)
+      .map(_.convertTo[ObjectKey])
+      .orElse(zookeeperClusterName.map(n => ObjectKey.of(GROUP_DEFAULT, n)))
   }
 
   implicit val BROKER_UPDATING_JSON_FORMAT: OharaJsonFormat[Updating] =
@@ -126,7 +137,6 @@ object BrokerApi {
       .requireBindPort(CLIENT_PORT_KEY)
       .requireBindPort(EXPORTER_PORT_KEY)
       .requireBindPort(JMX_PORT_KEY)
-      .rejectEmptyString(ZOOKEEPER_CLUSTER_NAME_KEY)
       .refine
 
   final case class BrokerClusterInfo private[BrokerApi] (settings: Map[String, JsValue],
@@ -163,7 +173,7 @@ object BrokerApi {
     def exporterPort: Int = settings.exporterPort
     def clientPort: Int = settings.clientPort
     def jmxPort: Int = settings.jmxPort
-    def zookeeperClusterName: String = settings.zookeeperClusterName.get
+    def zookeeperClusterKey: ObjectKey = settings.zookeeperClusterKey.get
     // TODO: expose the metrics for bk
     override def metrics: Metrics = Metrics.EMPTY
   }
@@ -186,9 +196,9 @@ object BrokerApi {
     * this request is extended by collie also so it is public than sealed.
     */
   trait Request extends ClusterRequest {
-    @Optional("Ignoring zookeeper cluster name enable server to match a zk for you")
-    def zookeeperClusterName(zookeeperClusterName: String): Request.this.type =
-      setting(ZOOKEEPER_CLUSTER_NAME_KEY, JsString(CommonUtils.requireNonEmpty(zookeeperClusterName)))
+    @Optional("Ignoring zookeeper cluster key enable server to match a zk for you")
+    def zookeeperClusterKey(zookeeperClusterKey: ObjectKey): Request.this.type =
+      setting(ZOOKEEPER_CLUSTER_KEY_KEY, OBJECT_KEY_FORMAT.write(Objects.requireNonNull(zookeeperClusterKey)))
     @Optional("the default port is random")
     def clientPort(clientPort: Int): Request.this.type =
       setting(CLIENT_PORT_KEY, JsNumber(CommonUtils.requireConnectionPort(clientPort)))

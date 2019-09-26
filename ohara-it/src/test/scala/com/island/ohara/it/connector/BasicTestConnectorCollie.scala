@@ -97,21 +97,21 @@ abstract class BasicTestConnectorCollie extends IntegrationTest with Matchers {
     uploadJDBCJarToConfigurator() //For upload JDBC jar
 
     // Create database client
-    client = DatabaseClient.builder.url(dbUrl.get).user(dbUserName.get).password(dbPassword.get).build
+    client = DatabaseClient.builder.url(dbUrl().get).user(dbUserName().get).password(dbPassword().get).build
 
     // Create table
-    val columns = (1 to 3).map(x => s"${columnPrefixName}${x}")
+    val columns = (1 to 3).map(x => s"${columnPrefixName()}$x")
     timestampColumn = columns(0)
 
     val column1 = RdbColumn(columns(0), "TIMESTAMP", false)
     val column2 = RdbColumn(columns(1), "varchar(45)", false)
     val column3 = RdbColumn(columns(2), "integer", true)
-    client.createTable(tableName, Seq(column1, column2, column3))
+    client.createTable(tableName(), Seq(column1, column2, column3))
 
     // Insert data in the table
     val statement: Statement = client.connection.createStatement()
     (1 to 100).foreach(i => {
-      statement.execute(insertTableSQL(tableName, columns, i))
+      statement.execute(insertTableSQL(tableName(), columns, i))
     })
   }
 
@@ -133,7 +133,7 @@ abstract class BasicTestConnectorCollie extends IntegrationTest with Matchers {
         clientPort = CommonUtils.availablePort(),
         exporterPort = CommonUtils.availablePort(),
         jmxPort = CommonUtils.availablePort(),
-        zkClusterName = zkCluster.name,
+        zkClusterKey = zkCluster.key,
         nodeNames = Set(nodes.head.name)
       ))
     result(bk_start(bkCluster.name))
@@ -188,7 +188,7 @@ abstract class BasicTestConnectorCollie extends IntegrationTest with Matchers {
         .connectorClass(classOf[JDBCSourceConnector])
         .topicKey(topicKey)
         .numberOfTasks(1)
-        .settings(props.toMap)
+        .settings(props().toMap)
         .create())
 
   private[this] def checkTopicData(brokers: String, topicNameOnKafka: String): Unit = {
@@ -219,7 +219,7 @@ abstract class BasicTestConnectorCollie extends IntegrationTest with Matchers {
 
   private[this] def uploadJDBCJarToConfigurator(): Unit = {
     val jarApi: FileInfoApi.Access = FileInfoApi.access.hostname(configurator.hostname).port(configurator.port)
-    val jar = new File(CommonUtils.path(jarFolderPath, jdbcDriverJarFileName))
+    val jar = new File(CommonUtils.path(jarFolderPath, jdbcDriverJarFileName()))
     jdbcJarFileInfo = result(jarApi.request.file(jar).upload())
   }
 
@@ -258,7 +258,7 @@ abstract class BasicTestConnectorCollie extends IntegrationTest with Matchers {
                               clientPort: Int,
                               exporterPort: Int,
                               jmxPort: Int,
-                              zkClusterName: String,
+                              zkClusterKey: ObjectKey,
                               nodeNames: Set[String]): Future[BrokerApi.BrokerClusterInfo] =
     bkApi.request
       .name(clusterName)
@@ -266,7 +266,7 @@ abstract class BasicTestConnectorCollie extends IntegrationTest with Matchers {
       .clientPort(clientPort)
       .exporterPort(exporterPort)
       .jmxPort(jmxPort)
-      .zookeeperClusterName(zkClusterName)
+      .zookeeperClusterKey(zkClusterKey)
       .nodeNames(nodeNames)
       .create()
 
@@ -300,7 +300,7 @@ abstract class BasicTestConnectorCollie extends IntegrationTest with Matchers {
       .create()
 
   private[this] def checkDataBaseInfo(): Unit = {
-    if (dbUrl.isEmpty || dbUserName.isEmpty || dbPassword.isEmpty)
+    if (dbUrl().isEmpty || dbUserName().isEmpty || dbPassword().isEmpty)
       skipTest(s"Skip the JDBC source connector test, Please setting dbURL, dbUserName and dbPassword")
 
     if (jarFolderPath.isEmpty)
@@ -323,9 +323,9 @@ abstract class BasicTestConnectorCollie extends IntegrationTest with Matchers {
   private[this] def props(): JDBCSourceConnectorConfig =
     JDBCSourceConnectorConfig(
       TaskSetting.of(Map(
-        "source.db.url" -> dbUrl.get,
-        "source.db.username" -> dbUserName.get,
-        "source.db.password" -> dbPassword.get,
+        "source.db.url" -> dbUrl().get,
+        "source.db.username" -> dbUserName().get,
+        "source.db.password" -> dbPassword().get,
         "source.table.name" -> tableName,
         "source.timestamp.column.name" -> timestampColumn,
         "source.schema.pattern" -> "TUSER"
@@ -335,7 +335,7 @@ abstract class BasicTestConnectorCollie extends IntegrationTest with Matchers {
   def afterTest(): Unit = {
     if (client != null) {
       val statement: Statement = client.connection.createStatement()
-      statement.execute(s"drop table $tableName")
+      statement.execute(s"drop table ${tableName()}")
     }
     Releasable.close(client)
     Releasable.close(configurator)

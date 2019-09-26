@@ -27,10 +27,10 @@ private class FakeBrokerCollie(nodes: Seq[Node],
                                zkContainers: Seq[ContainerInfo],
                                bkExistContainers: Seq[ContainerInfo])
     extends BrokerCollie {
-  protected override def zookeeperContainers(zkClusterName: String)(
+  protected override def zookeeperContainers(zkClusterKey: ObjectKey)(
     implicit executionContext: ExecutionContext): Future[Seq[ContainerInfo]] =
-    if (FakeBrokerCollie.zookeeperClusterName == zkClusterName) Future.successful(zkContainers)
-    else Future.failed(new NoSuchClusterException(s"$zkClusterName does not exist"))
+    if (FakeBrokerCollie.zookeeperClusterKey == zkClusterKey) Future.successful(zkContainers)
+    else Future.failed(new NoSuchClusterException(s"$zkClusterKey does not exist"))
 
   override protected def doCreator(executionContext: ExecutionContext,
                                    containerName: String,
@@ -58,7 +58,7 @@ private class FakeBrokerCollie(nodes: Seq[Node],
           settings = BrokerApi.access.request
             .name("bk1")
             .imageName(BrokerApi.IMAGE_NAME_DEFAULT)
-            .zookeeperClusterName("zk1")
+            .zookeeperClusterKey(ObjectKey.of(GROUP_DEFAULT, "zk1"))
             .nodeNames(nodes.map(_.hostname).toSet)
             .creation
             .settings,
@@ -96,5 +96,5 @@ private class FakeBrokerCollie(nodes: Seq[Node],
 }
 
 object FakeBrokerCollie {
-  val zookeeperClusterName: String = "zk1"
+  val zookeeperClusterKey: ObjectKey = ObjectKey.of(GROUP_DEFAULT, "zk1")
 }

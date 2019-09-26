@@ -22,6 +22,7 @@ import com.island.ohara.client.configurator.v0.ContainerApi.ContainerInfo
 import com.island.ohara.client.configurator.v0.NodeApi.Node
 import com.island.ohara.client.configurator.v0.ZookeeperApi.ZookeeperClusterInfo
 import com.island.ohara.client.configurator.v0.{ClusterInfo, NodeApi}
+import com.island.ohara.common.setting.ObjectKey
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -67,14 +68,14 @@ private class BrokerCollieImpl(node: NodeCollie, dockerCache: DockerClientCache,
     clusterCache.put(clusterInfo, clusterCache.get(clusterInfo) ++ successfulContainers)
   }
 
-  protected override def zookeeperContainers(zkClusterName: String)(
+  protected override def zookeeperContainers(zkClusterKey: ObjectKey)(
     implicit executionContext: ExecutionContext): Future[Seq[ContainerInfo]] =
     Future.successful(
       clusterCache.snapshot
         .filter(_._1.isInstanceOf[ZookeeperClusterInfo])
-        .find(_._1.name == zkClusterName)
+        .find(_._1.key == zkClusterKey)
         .map(_._2)
-        .getOrElse(throw new NoSuchClusterException(s"zookeeper:$zkClusterName does not exist")))
+        .getOrElse(throw new NoSuchClusterException(s"zookeeper:$zkClusterKey does not exist")))
 
   override protected def nodeCollie: NodeCollie = node
 

@@ -33,7 +33,7 @@ class TestBrokerRoute extends OharaTest with Matchers {
   private[this] val configurator = Configurator.builder.fake(0, 0).build()
   private[this] val brokerApi = BrokerApi.access.hostname(configurator.hostname).port(configurator.port)
 
-  private[this] val zkClusterName = CommonUtils.randomString(10)
+  private[this] val zkKey = ObjectKey.of(CommonUtils.randomString(10), CommonUtils.randomString(10))
 
   private[this] val nodeNames: Set[String] = Set("n0", "n1")
 
@@ -59,11 +59,11 @@ class TestBrokerRoute extends OharaTest with Matchers {
         .hostname(configurator.hostname)
         .port(configurator.port)
         .request
-        .name(zkClusterName)
+        .key(zkKey)
         .nodeNames(nodeNames)
         .create()
     )
-    zk.name shouldBe zkClusterName
+    zk.key shouldBe zkKey
 
     // start zookeeper
     result(
@@ -82,11 +82,7 @@ class TestBrokerRoute extends OharaTest with Matchers {
   @Test
   def removeBrokerClusterUsedByWorkerCluster(): Unit = {
     val bk = result(
-      brokerApi.request
-        .name(CommonUtils.randomString(10))
-        .zookeeperClusterName(zkClusterName)
-        .nodeNames(nodeNames)
-        .create())
+      brokerApi.request.name(CommonUtils.randomString(10)).zookeeperClusterKey(zkKey).nodeNames(nodeNames).create())
     result(brokerApi.start(bk.key))
 
     val wk = result(
@@ -141,12 +137,8 @@ class TestBrokerRoute extends OharaTest with Matchers {
       )
 
       val updated = result(
-        brokerApi.request
-          .name(CommonUtils.randomString(10))
-          .zookeeperClusterName(anotherZkName)
-          .nodeNames(nodeNames)
-          .update())
-      updated.zookeeperClusterName shouldBe anotherZkName
+        brokerApi.request.name(CommonUtils.randomString(10)).zookeeperClusterKey(zk.key).nodeNames(nodeNames).update())
+      updated.zookeeperClusterKey.name() shouldBe anotherZkName
       // after assigned, start is ok
       result(brokerApi.start(updated.key))
       result(brokerApi.stop(updated.key))
@@ -168,9 +160,9 @@ class TestBrokerRoute extends OharaTest with Matchers {
   def testDefaultZk(): Unit = {
     val bk = result(brokerApi.request.name(CommonUtils.randomString(10)).nodeNames(nodeNames).create())
     // absent zookeeper name will be auto-filled in creation
-    bk.zookeeperClusterName shouldBe zkClusterName
+    bk.zookeeperClusterKey shouldBe zkKey
     result(brokerApi.start(bk.key))
-    result(brokerApi.get(bk.key)).zookeeperClusterName shouldBe zkClusterName
+    result(brokerApi.get(bk.key)).zookeeperClusterKey shouldBe zkKey
   }
 
   @Test
@@ -205,7 +197,7 @@ class TestBrokerRoute extends OharaTest with Matchers {
     result(ZookeeperApi.access.hostname(configurator.hostname).port(configurator.port).start(zk2.key))
 
     val bk2 = result(
-      brokerApi.request.name(CommonUtils.randomString(10)).nodeNames(nodeNames).zookeeperClusterName(zk2.name).create())
+      brokerApi.request.name(CommonUtils.randomString(10)).nodeNames(nodeNames).zookeeperClusterKey(zk2.key).create())
     result(brokerApi.start(bk2.key))
 
     val clusters = result(brokerApi.list())
@@ -296,7 +288,7 @@ class TestBrokerRoute extends OharaTest with Matchers {
     )
 
     an[IllegalArgumentException] should be thrownBy result(
-      brokerApi.request.name(name).zookeeperClusterName(zk2.name).nodeNames(nodeNames).create())
+      brokerApi.request.name(name).zookeeperClusterKey(zk2.key).nodeNames(nodeNames).create())
   }
 
   @Test
@@ -322,13 +314,13 @@ class TestBrokerRoute extends OharaTest with Matchers {
         .name(CommonUtils.randomString(10))
         .nodeNames(nodeNames)
         .clientPort(clientPort)
-        .zookeeperClusterName(zk2.name)
+        .zookeeperClusterKey(zk2.key)
         .create())
     an[IllegalArgumentException] should be thrownBy result(brokerApi.start(bk2.key))
 
     // pass
     val bk3 = result(
-      brokerApi.request.name(CommonUtils.randomString(10)).nodeNames(nodeNames).zookeeperClusterName(zk2.name).create())
+      brokerApi.request.name(CommonUtils.randomString(10)).nodeNames(nodeNames).zookeeperClusterKey(zk2.key).create())
     result(brokerApi.start(bk3.key))
   }
 
@@ -355,13 +347,13 @@ class TestBrokerRoute extends OharaTest with Matchers {
         .name(CommonUtils.randomString(10))
         .nodeNames(nodeNames)
         .exporterPort(exporterPort)
-        .zookeeperClusterName(zk2.name)
+        .zookeeperClusterKey(zk2.key)
         .create())
     an[IllegalArgumentException] should be thrownBy result(brokerApi.start(bk2.key))
 
     // pass
     val bk3 = result(
-      brokerApi.request.name(CommonUtils.randomString(10)).nodeNames(nodeNames).zookeeperClusterName(zk2.name).create())
+      brokerApi.request.name(CommonUtils.randomString(10)).nodeNames(nodeNames).zookeeperClusterKey(zk2.key).create())
     result(brokerApi.start(bk3.key))
   }
 
@@ -387,13 +379,13 @@ class TestBrokerRoute extends OharaTest with Matchers {
         .name(CommonUtils.randomString(10))
         .nodeNames(nodeNames)
         .jmxPort(jmxPort)
-        .zookeeperClusterName(zk2.name)
+        .zookeeperClusterKey(zk2.key)
         .create())
     an[IllegalArgumentException] should be thrownBy result(brokerApi.start(bk2.key))
 
     // pass
     val bk3 = result(
-      brokerApi.request.name(CommonUtils.randomString(10)).nodeNames(nodeNames).zookeeperClusterName(zk2.name).create())
+      brokerApi.request.name(CommonUtils.randomString(10)).nodeNames(nodeNames).zookeeperClusterKey(zk2.key).create())
     result(brokerApi.start(bk3.key))
   }
 

@@ -109,14 +109,14 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
                               clientPort: Int,
                               exporterPort: Int,
                               jmxPort: Int,
-                              zkClusterName: String,
+                              zkClusterKey: ObjectKey,
                               nodeNames: Set[String]): Future[BrokerApi.BrokerClusterInfo] = bkApi.request
     .name(clusterName)
     .group(group)
     .clientPort(clientPort)
     .exporterPort(exporterPort)
     .jmxPort(jmxPort)
-    .zookeeperClusterName(zkClusterName)
+    .zookeeperClusterKey(zkClusterKey)
     .nodeNames(nodeNames)
     .create()
 
@@ -298,7 +298,7 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
     val exporterPort = CommonUtils.availablePort()
     val jmxPort = CommonUtils.availablePort()
     def assert(brokerCluster: BrokerClusterInfo): BrokerClusterInfo = {
-      brokerCluster.zookeeperClusterName shouldBe zkCluster.name
+      brokerCluster.zookeeperClusterKey shouldBe zkCluster.key
       brokerCluster.name shouldBe clusterName
       brokerCluster.nodeNames.head shouldBe nodeName
       brokerCluster.clientPort shouldBe clientPort
@@ -314,7 +314,7 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
           clientPort = clientPort,
           exporterPort = exporterPort,
           jmxPort = jmxPort,
-          zkClusterName = zkCluster.name,
+          zkClusterKey = zkCluster.key,
           nodeNames = Set(nodeName)
         )))
     result(bk_start(bkCluster.name))
@@ -384,7 +384,7 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
         log.info(s"[BROKER] add new node:$newNode to cluster:${previousCluster.name}...done")
         newCluster.name shouldBe previousCluster.name
         newCluster.imageName shouldBe previousCluster.imageName
-        newCluster.zookeeperClusterName shouldBe previousCluster.zookeeperClusterName
+        newCluster.zookeeperClusterKey shouldBe previousCluster.zookeeperClusterKey
         newCluster.exporterPort shouldBe previousCluster.exporterPort
         newCluster.clientPort shouldBe previousCluster.clientPort
         newCluster.nodeNames.size - previousCluster.nodeNames.size shouldBe 1
@@ -476,7 +476,7 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
         val newCluster = result(bk_cluster(previousCluster.name))
         newCluster.name == previousCluster.name &&
         newCluster.imageName == previousCluster.imageName &&
-        newCluster.zookeeperClusterName == previousCluster.zookeeperClusterName &&
+        newCluster.zookeeperClusterKey == previousCluster.zookeeperClusterKey &&
         newCluster.clientPort == previousCluster.clientPort &&
         previousCluster.nodeNames.size - newCluster.nodeNames.size == 1 &&
         !result(bk_cluster(newCluster.name)).aliveNodes.contains(beRemovedNode)
@@ -503,7 +503,7 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
         clientPort = CommonUtils.availablePort(),
         exporterPort = CommonUtils.availablePort(),
         jmxPort = CommonUtils.availablePort(),
-        zkClusterName = zkCluster.name,
+        zkClusterKey = zkCluster.key,
         nodeNames = Set(nodes.head.name)
       ))
     result(bk_start(bkCluster.name))
@@ -749,7 +749,7 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
             clientPort = CommonUtils.availablePort(),
             exporterPort = CommonUtils.availablePort(),
             jmxPort = CommonUtils.availablePort(),
-            zkClusterName = zk.name,
+            zkClusterKey = zk.key,
             nodeNames = Set(nodes.head.name)
           ))
         result(bk_start(bkCluster.name))
@@ -786,7 +786,7 @@ abstract class BasicTests4Collie extends IntegrationTest with Matchers {
         clientPort = CommonUtils.availablePort(),
         exporterPort = CommonUtils.availablePort(),
         jmxPort = CommonUtils.availablePort(),
-        zkClusterName = zkCluster.name,
+        zkClusterKey = zkCluster.key,
         nodeNames = Set(nodes.head.name)
       ))
     result(bk_start(bkCluster.name))

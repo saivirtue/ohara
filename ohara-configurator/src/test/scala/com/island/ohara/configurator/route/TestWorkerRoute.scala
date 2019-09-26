@@ -143,7 +143,7 @@ class TestWorkerRoute extends OharaTest with Matchers {
         .port(configurator.port)
         .request
         .name(CommonUtils.randomString(10))
-        .zookeeperClusterName(zkClusterName)
+        .zookeeperClusterKey(zk.key)
         .nodeNames(nodeNames)
         .create())
     result(BrokerApi.access.hostname(configurator.hostname).port(configurator.port).start(anotherBk.key))

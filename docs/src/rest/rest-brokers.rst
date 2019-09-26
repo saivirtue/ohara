@@ -44,7 +44,15 @@ The properties which can be set by user are shown below.
      - clientPort (**int**) — broker client port.
      - exporterPort (**int**) — port used by internal communication
      - jmxPort (**int**) — port used by jmx service
-     - zookeeperClusterName (**String**) — name of zookeeper cluster used to store metadata of broker cluster
+     - zookeeperClusterKey (**object**) — key of zookeeper cluster used to store metadata of broker cluster
+
+       - zookeeperClusterKey.group(**option(string)**) — the group of zookeeper cluster
+       - zookeeperClusterKey.name(**string**) — the name of zookeeper cluster
+
+       .. note::
+          the following forms are legal as well. 1) {"name": "n"} and 2) "n". Both forms are converted to
+          {"group": "default", "name": "n"}
+
      - nodeNames (**array(string)**) — the nodes running the zookeeper process
      - tags (**object**) — the user defined parameters
 
@@ -67,7 +75,7 @@ create a broker cluster
 #. clientPort (**int**) — broker client port ; default is random port
 #. exporterPort (**int**) — port used by internal communication ; default is random port
 #. jmxPort (**int**) — port used by jmx service ; default is random port
-#. zookeeperClusterName (**option(string)**) — name of zookeeper cluster used to store metadata of broker cluster.
+#. zookeeperClusterKey (**option(object)**) — key of zookeeper cluster used to store metadata of broker cluster.
    default will find a zookeeper for you
 #. nodeNames (**array(string)**) — the nodes running the broker process
 #. tags(**object**) — the user defined parameters ; default is empty
@@ -79,7 +87,10 @@ Example Request
        "name": "bk00",
        "group": "abc",
        "imageName": "oharastream/broker:$|version|",
-       "zookeeperClusterName": "zk00",
+       "zookeeperClusterKey": {
+         "group": "default",
+         "name": "zk00"
+       },
        "clientPort": 12345,
        "exporterPort": 12346,
        "jmxPort": 12347,
@@ -96,7 +107,10 @@ Example Response
        "settings": {
          "name": "bk00",
          "group": "abc",
-         "zookeeperClusterName": "zk00",
+         "zookeeperClusterKey": {
+           "group": "default",
+           "name": "zk00"
+         },
          "imageName": "oharastream/broker:$|version|",
          "exporterPort": 12346,
          "clientPort": 12345,
@@ -139,7 +153,10 @@ Example Response
        "settings": {
          "name": "403e6c457d",
          "group": "default",
-         "zookeeperClusterName": "zk00",
+         "zookeeperClusterKey": {
+           "group": "default",
+           "name": "zk00"
+         },
          "imageName": "oharastream/broker:$|version|",
          "exporterPort": 12346,
          "clientPort": 12345,
@@ -166,7 +183,10 @@ Example Response
          "settings": {
            "name": "bk00",
            "group": "default",
-           "zookeeperClusterName": "zk00",
+           "zookeeperClusterKey": {
+             "group": "default",
+             "name": "zk00"
+           },
            "imageName": "oharastream/broker:$|version|",
            "exporterPort": 12346,
            "clientPort": 12345,
@@ -194,7 +214,7 @@ Example Request
   #. clientPort (**int**) — broker client port ; default is random port
   #. exporterPort (**int**) — port used by internal communication ; default is random port
   #. jmxPort (**int**) — port used by jmx service ; default is random port
-  #. zookeeperClusterName (**option(string)**) — name of zookeeper cluster used to store metadata of broker cluster.
+  #. zookeeperClusterKey (**option(object)**) — key of zookeeper cluster used to store metadata of broker cluster.
      default will find a zookeeper for you
   #. nodeNames (**array(string)**) — the nodes running the broker process
   #. tags(**object**) — the user defined parameters ; default is empty
@@ -203,7 +223,10 @@ Example Request
 
      {
        "imageName": "oharastream/broker:$|version|",
-       "zookeeperClusterName": "zk00",
+       "zookeeperClusterKey": {
+         "group": "default",
+         "name": "zk00"
+       },
        "clientPort": 12345,
        "exporterPort": 12346,
        "jmxPort": 12347,
@@ -220,7 +243,10 @@ Example Response
        "settings": {
          "name": "bk00",
          "group": "default",
-         "zookeeperClusterName": "zk00",
+         "zookeeperClusterKey": {
+           "group": "default",
+           "name": "zk00"
+         },
          "imageName": "oharastream/broker:$|version|",
          "exporterPort": 12346,
          "clientPort": 12345,
@@ -267,7 +293,10 @@ Example Response
        "settings": {
          "name": "bk00",
          "group": "default",
-         "zookeeperClusterName": "zk00",
+         "zookeeperClusterKey": {
+           "group": "default",
+           "name": "zk00"
+         },
          "imageName": "oharastream/broker:$|version|",
          "exporterPort": 7071,
          "clientPort": 9092,

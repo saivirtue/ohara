@@ -68,7 +68,7 @@ abstract class BasicIntegrationTestsOfJsonIo extends IntegrationTest with Matche
       val bkKey = result(
         bkApi.request
           .name(bkName)
-          .zookeeperClusterName(zkName)
+          .zookeeperClusterKey(zkKey)
           .nodeName(nodes.head.hostname)
           .create()
           .map(_.key)

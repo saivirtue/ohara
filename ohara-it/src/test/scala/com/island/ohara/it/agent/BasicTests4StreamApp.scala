@@ -111,7 +111,7 @@ abstract class BasicTests4StreamApp extends IntegrationTest with Matchers {
       val bkCluster = result(
         bkApi.request
           .name(nameHolder.generateClusterName())
-          .zookeeperClusterName(zkCluster.name)
+          .zookeeperClusterKey(zkCluster.key)
           .nodeNames(nodes.take(1).map(_.name).toSet)
           .create())
       bkKey = bkCluster.key

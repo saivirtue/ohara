@@ -102,6 +102,7 @@ class ConfiguratorBuilder private[configurator] extends Builder[Configurator] {
       if (this.k8sClient != null) throw new IllegalArgumentException(alreadyExistMessage("k8sClient"))
       if (this.clusterCollie != null) throw new IllegalArgumentException(alreadyExistMessage("clusterCollie"))
       val store = getOrCreateStore()
+      val embeddedZkName = ObjectKey.of(com.island.ohara.client.configurator.v0.GROUP_DEFAULT, "embeddedzk")
       val embeddedBrokerKey = ObjectKey.of(com.island.ohara.client.configurator.v0.GROUP_DEFAULT, "embeddedbk")
       val embeddedWorkerKey = ObjectKey.of(com.island.ohara.client.configurator.v0.GROUP_DEFAULT, "embeddedwk")
       // we fake nodes for embedded bk and wk
@@ -138,7 +139,7 @@ class ConfiguratorBuilder private[configurator] extends Builder[Configurator] {
           settings = BrokerApi.access.request
             .key(embeddedBrokerKey)
             .imageName("None")
-            .zookeeperClusterName("None")
+            .zookeeperClusterKey(embeddedZkName)
             .clientPort(port)
             .nodeName(host)
             .creation
@@ -232,7 +233,7 @@ class ConfiguratorBuilder private[configurator] extends Builder[Configurator] {
               settings = BrokerApi.access.request
                 .name(s"$bkClusterNamePrefix$index")
                 .imageName(s"fakeImage$index")
-                .zookeeperClusterName(zkCluster.name)
+                .zookeeperClusterKey(zkCluster.key)
                 .nodeNames(zkCluster.nodeNames)
                 .creation
                 .settings,

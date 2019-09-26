@@ -49,7 +49,7 @@ connectors. The common settings are shown below.
 #. workerClusterKey (**Object**) — target worker cluster.
 
    - workerClusterKey.group (**option(string)**) — the group of cluster
-   - workerClusterKey.newName (**string**) — the name of cluster
+   - workerClusterKey.name (**string**) — the name of cluster
 
   .. note::
     the following forms are legal as well. 1) {"name": "n"} and 2) "n". Both forms are converted to

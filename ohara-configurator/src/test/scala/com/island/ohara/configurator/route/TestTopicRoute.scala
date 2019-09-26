@@ -127,7 +127,7 @@ class TestTopicRoute extends OharaTest with Matchers {
         .port(configurator.port)
         .request
         .name(CommonUtils.randomString(10))
-        .zookeeperClusterName(zk2.name)
+        .zookeeperClusterKey(zk2.key)
         .nodeNames(zk2.nodeNames)
         .create())
     result(BrokerApi.access.hostname(configurator.hostname).port(configurator.port).start(bk2.key))
@@ -158,7 +158,7 @@ class TestTopicRoute extends OharaTest with Matchers {
         .port(configurator.port)
         .request
         .name(CommonUtils.randomString(10))
-        .zookeeperClusterName(zk2.name)
+        .zookeeperClusterKey(zk2.key)
         .nodeNames(zk2.nodeNames)
         .create())
     result(BrokerApi.access.hostname(configurator.hostname).port(configurator.port).start(bk.key))

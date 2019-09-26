@@ -31,25 +31,16 @@ object BrokerRoute {
   private[this] def hookOfCreation(implicit zookeeperCollie: ZookeeperCollie,
                                    executionContext: ExecutionContext): HookOfCreation[Creation, BrokerClusterInfo] =
     (creation: Creation) =>
-      creation.zookeeperClusterName
-      // TODO: use key instead (see https://github.com/oharastream/ohara/issues/2769)
-        .map(n => Future.successful(ObjectKey.of(GROUP_DEFAULT, n)))
-        .getOrElse(CollieUtils.singleZookeeperCluster())
-        .map { zkKey =>
-          BrokerClusterInfo(
-            settings = BrokerApi.access.request
-              .settings(creation.settings)
-              // TODO: use key instead (see https://github.com/oharastream/ohara/issues/2731)
-              .zookeeperClusterName(zkKey.name())
-              .creation
-              .settings,
-            aliveNodes = Set.empty,
-            state = None,
-            error = None,
-            lastModified = CommonUtils.current(),
-            topicSettingDefinitions = TopicApi.TOPIC_DEFINITIONS
-          )
-      }
+      creation.zookeeperClusterKey.map(Future.successful).getOrElse(CollieUtils.singleZookeeperCluster()).map { zkKey =>
+        BrokerClusterInfo(
+          settings = BrokerApi.access.request.settings(creation.settings).zookeeperClusterKey(zkKey).creation.settings,
+          aliveNodes = Set.empty,
+          state = None,
+          error = None,
+          lastModified = CommonUtils.current(),
+          topicSettingDefinitions = TopicApi.TOPIC_DEFINITIONS
+        )
+    }
 
   private[this] def HookOfUpdating(
     implicit zookeeperCollie: ZookeeperCollie,
@@ -61,10 +52,9 @@ object BrokerRoute {
         .flatMap { clusters =>
           if (clusters.keys.filter(_.key == key).exists(_.state.nonEmpty))
             throw new RuntimeException(s"You cannot update property on non-stopped broker cluster: $key")
-          update.zookeeperClusterName
-            .orElse(previousOption.map(_.zookeeperClusterName))
-            // TODO: use key instead (see https://github.com/oharastream/ohara/issues/2769)
-            .map(n => Future.successful(ObjectKey.of(GROUP_DEFAULT, n)))
+          update.zookeeperClusterKey
+            .orElse(previousOption.map(_.zookeeperClusterKey))
+            .map(Future.successful)
             .getOrElse(CollieUtils.singleZookeeperCluster())
         }
         .map { zkKey =>
@@ -73,12 +63,7 @@ object BrokerRoute {
           // 3) fill the ignored settings by creation
           val newSettings = previousOption.map(_.settings).getOrElse(Map.empty) ++ update.settings
           BrokerClusterInfo(
-            settings = BrokerApi.access.request
-              .settings(newSettings)
-              // TODO: use key instead (see https://github.com/oharastream/ohara/issues/2731)
-              .zookeeperClusterName(zkKey.name())
-              .creation
-              .settings,
+            settings = BrokerApi.access.request.settings(newSettings).zookeeperClusterKey(zkKey).creation.settings,
             aliveNodes = Set.empty,
             state = None,
             error = None,
@@ -99,10 +84,10 @@ object BrokerRoute {
             val sameZkNameClusters = clusters
               .filter(_.isInstanceOf[BrokerClusterInfo])
               .map(_.asInstanceOf[BrokerClusterInfo])
-              .filter(_.zookeeperClusterName == brokerClusterInfo.zookeeperClusterName)
+              .filter(_.zookeeperClusterKey == brokerClusterInfo.zookeeperClusterKey)
             if (sameZkNameClusters.nonEmpty)
               throw new IllegalArgumentException(
-                s"zk cluster:${brokerClusterInfo.zookeeperClusterName} is already used by broker cluster:${sameZkNameClusters.head.name}")
+                s"zk cluster:${brokerClusterInfo.zookeeperClusterKey} is already used by broker cluster:${sameZkNameClusters.head.name}")
             clusterCollie.brokerCollie.creator
               .settings(brokerClusterInfo.settings)
               .name(brokerClusterInfo.name)
@@ -110,7 +95,7 @@ object BrokerRoute {
               .clientPort(brokerClusterInfo.clientPort)
               .exporterPort(brokerClusterInfo.exporterPort)
               .jmxPort(brokerClusterInfo.jmxPort)
-              .zookeeperClusterName(brokerClusterInfo.zookeeperClusterName)
+              .zookeeperClusterKey(brokerClusterInfo.zookeeperClusterKey)
               .imageName(brokerClusterInfo.imageName)
               .nodeNames(brokerClusterInfo.nodeNames)
               .threadPool(executionContext)
