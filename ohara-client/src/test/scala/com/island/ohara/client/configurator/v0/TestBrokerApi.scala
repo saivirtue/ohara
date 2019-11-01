@@ -18,7 +18,7 @@ package com.island.ohara.client.configurator.v0
 
 import com.island.ohara.client.configurator.v0.BrokerApi._
 import com.island.ohara.common.rule.OharaTest
-import com.island.ohara.common.setting.ObjectKey
+import com.island.ohara.common.setting.{ObjectKey, SettingDef}
 import com.island.ohara.common.util.CommonUtils
 import org.junit.Test
 import org.scalatest.Matchers
@@ -686,4 +686,10 @@ class TestBrokerApi extends OharaTest with Matchers {
 
   @Test
   def checkClientPortDefinition(): Unit = BrokerApi.DEFINITIONS.find(_.key() == CLIENT_PORT_KEY) should not be None
+
+  @Test
+  def checkZookeeperKeyDefinition(): Unit = BrokerApi.DEFINITIONS
+    .find(_.key() == BrokerApi.ZOOKEEPER_CLUSTER_KEY_DEFINITION.key())
+    .get
+    .valueType() shouldBe SettingDef.Type.OBJECT_KEY
 }

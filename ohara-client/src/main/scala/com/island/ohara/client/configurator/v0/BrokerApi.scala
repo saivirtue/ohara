@@ -62,7 +62,7 @@ object BrokerApi {
   val ZOOKEEPER_CLUSTER_KEY_DEFINITION: SettingDef = createDef(
     _.key(ZOOKEEPER_CLUSTER_KEY_KEY)
       .documentation("the zookeeper cluster used to manage broker nodes")
-      .valueType(Type.OBJECT_KEYS)
+      .valueType(Type.OBJECT_KEY)
       .reference(Reference.ZOOKEEPER_CLUSTER)
       .build())
   val CLIENT_PORT_DEFINITION: SettingDef = createDef(
