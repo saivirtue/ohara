@@ -29,7 +29,13 @@ import * as inspect from './inspectApi';
 
 const url = URL.BROKER_URL;
 
-export const create = async (params, body = {}) => {
+/**
+ *
+ * @param {*} params request parameters
+ * @param {*} body definition body
+ * @param {*} customTitleFn custom title function: (statusCode) => string
+ */
+export const create = async (params, body = {}, customTitleFn) => {
   if (isEmpty(body)) {
     const info = await inspect.getBrokerInfo();
     if (!info.errors) body = info.data;
@@ -38,13 +44,23 @@ export const create = async (params, body = {}) => {
   const requestBody = requestUtil(params, broker, body);
   const res = await axiosInstance.post(url, requestBody);
   const result = responseUtil(res, broker);
-  result.title =
-    `Create broker ${getKey(params)} ` +
-    (result.errors ? 'failed.' : 'successful.');
+  if (typeof customTitleFn === 'function') {
+    result.title = customTitleFn(result.status);
+  } else {
+    result.title =
+      `Create broker ${getKey(params)} ` +
+      (result.errors ? 'failed.' : 'successful.');
+  }
+
   return result;
 };
 
-export const start = async params => {
+/**
+ *
+ * @param {*} params request parameters
+ * @param {*} customTitleFn custom title function: (statusCode) => string
+ */
+export const start = async (params, customTitleFn) => {
   const { name, group } = params;
   await axiosInstance.put(`${url}/${name}/start?group=${group}`);
   const res = await wait({
@@ -52,26 +68,44 @@ export const start = async params => {
     checkFn: waitUtil.waitForRunning,
   });
   const result = responseUtil(res, broker);
-  result.title =
-    `Start broker ${getKey(params)} ` +
-    (result.errors ? 'failed.' : 'successful.');
+  if (typeof customTitleFn === 'function') {
+    result.title = customTitleFn(result.status);
+  } else {
+    result.title =
+      `Start broker ${getKey(params)} ` +
+      (result.errors ? 'failed.' : 'successful.');
+  }
   return result;
 };
 
-export const update = async params => {
+/**
+ *
+ * @param {*} params request parameters
+ * @param {*} customTitleFn custom title function: (statusCode) => string
+ */
+export const update = async (params, customTitleFn) => {
   const { name, group } = params;
   delete params[name];
   delete params[group];
   const body = params;
   const res = await axiosInstance.put(`${url}/${name}?group=${group}`, body);
   const result = responseUtil(res, broker);
-  result.title =
-    `Update broker ${getKey(params)} ` +
-    (result.errors ? 'failed.' : 'successful.');
+  if (typeof customTitleFn === 'function') {
+    result.title = customTitleFn(result.status);
+  } else {
+    result.title =
+      `Update broker ${getKey(params)} ` +
+      (result.errors ? 'failed.' : 'successful.');
+  }
   return result;
 };
 
-export const stop = async params => {
+/**
+ *
+ * @param {*} params request parameters
+ * @param {*} customTitleFn custom title function: (statusCode) => string
+ */
+export const stop = async (params, customTitleFn) => {
   const { name, group } = params;
   await axiosInstance.put(`${url}/${name}/stop?group=${group}`);
   const res = await wait({
@@ -79,13 +113,22 @@ export const stop = async params => {
     checkFn: waitUtil.waitForStop,
   });
   const result = responseUtil(res, broker);
-  result.title =
-    `Stop broker ${getKey(params)} ` +
-    (result.errors ? 'failed.' : 'successful.');
+  if (typeof customTitleFn === 'function') {
+    result.title = customTitleFn(result.status);
+  } else {
+    result.title =
+      `Stop broker ${getKey(params)} ` +
+      (result.errors ? 'failed.' : 'successful.');
+  }
   return result;
 };
 
-export const remove = async params => {
+/**
+ *
+ * @param {*} params request parameters
+ * @param {*} customTitleFn custom title function: (statusCode) => string
+ */
+export const remove = async (params, customTitleFn) => {
   const { name, group } = params;
   await axiosInstance.delete(`${url}/${name}?group=${group}`);
   const res = await wait({
@@ -94,31 +137,58 @@ export const remove = async params => {
     paramRes: params,
   });
   const result = responseUtil(res, broker);
-  result.title =
-    `Remove broker ${getKey(params)} ` +
-    (result.errors ? 'failed.' : 'successful.');
+  if (typeof customTitleFn === 'function') {
+    result.title = customTitleFn(result.status);
+  } else {
+    result.title =
+      `Remove broker ${getKey(params)} ` +
+      (result.errors ? 'failed.' : 'successful.');
+  }
   return result;
 };
 
-export const get = async params => {
+/**
+ *
+ * @param {*} params request parameters
+ * @param {*} customTitleFn custom title function: (statusCode) => string
+ */
+export const get = async (params, customTitleFn) => {
   const { name, group } = params;
   const res = await axiosInstance.get(`${url}/${name}?group=${group}`);
   const result = responseUtil(res, broker);
-  result.title =
-    `Get broker ${getKey(params)} ` +
-    (result.errors ? 'failed.' : 'successful.');
+  if (typeof customTitleFn === 'function') {
+    result.title = customTitleFn(result.status);
+  } else {
+    result.title =
+      `Get broker ${getKey(params)} ` +
+      (result.errors ? 'failed.' : 'successful.');
+  }
   return result;
 };
 
-export const getAll = async (params = {}) => {
+/**
+ *
+ * @param {*} params request parameters
+ * @param {*} customTitleFn custom title function: (statusCode) => string
+ */
+export const getAll = async (params = {}, customTitleFn) => {
   const res = await axiosInstance.get(url + URL.toQueryParameters(params));
   const result = responseUtil(res, broker);
-  result.title =
-    `Get broker list ` + (result.errors ? 'failed.' : 'successful.');
+  if (typeof customTitleFn === 'function') {
+    result.title = customTitleFn(result.status);
+  } else {
+    result.title =
+      `Get broker list ` + (result.errors ? 'failed.' : 'successful.');
+  }
   return result;
 };
 
-export const addNode = async params => {
+/**
+ *
+ * @param {*} params request parameters
+ * @param {*} customTitleFn custom title function: (statusCode) => string
+ */
+export const addNode = async (params, customTitleFn) => {
   const { name, group, nodeName } = params;
   await axiosInstance.put(`${url}/${name}/${nodeName}?group=${group}`);
   const res = await wait({
@@ -127,13 +197,22 @@ export const addNode = async params => {
     paramRes: nodeName,
   });
   const result = responseUtil(res, broker);
-  result.title =
-    `Add node to broker ${getKey(params)} ` +
-    (result.errors ? 'failed.' : 'successful.');
+  if (typeof customTitleFn === 'function') {
+    result.title = customTitleFn(result.status);
+  } else {
+    result.title =
+      `Add node to broker ${getKey(params)} ` +
+      (result.errors ? 'failed.' : 'successful.');
+  }
   return result;
 };
 
-export const removeNode = async params => {
+/**
+ *
+ * @param {*} params request parameters
+ * @param {*} customTitleFn custom title function: (statusCode) => string
+ */
+export const removeNode = async (params, customTitleFn) => {
   const { name, group, nodeName } = params;
   await axiosInstance.delete(`${url}/${name}/${nodeName}?group=${group}`);
   const res = await wait({
@@ -142,8 +221,12 @@ export const removeNode = async params => {
     paramRes: nodeName,
   });
   const result = responseUtil(res, broker);
-  result.title =
-    `Remove node from broker ${getKey(params)} ` +
-    (result.errors ? 'failed.' : 'successful.');
+  if (typeof customTitleFn === 'function') {
+    result.title = customTitleFn(result.status);
+  } else {
+    result.title =
+      `Remove node from broker ${getKey(params)} ` +
+      (result.errors ? 'failed.' : 'successful.');
+  }
   return result;
 };

@@ -399,4 +399,63 @@ describe('Broker API', () => {
     expect(tags).to.be.an('object');
     expect(tags.name).to.eq(bkCluster.name);
   });
+
+  it('createBroker with custom title', async () => {
+    const title = generate.message();
+    const titleFn = status => {
+      if (status === 200) {
+        return title;
+      } else {
+        return 'error title';
+      }
+    };
+
+    const bkCluster = await generateBroker();
+    const result = await bkApi.create(bkCluster, {}, titleFn);
+    expect(result.errors).to.be.undefined;
+
+    // we use the custom title instead
+    expect(result.title).to.eq(title);
+
+    const { aliveNodes, lastModified, state, error } = result.data;
+    const {
+      name,
+      group,
+      nodeNames,
+      clientPort,
+      jmxPort,
+      imageName,
+      zookeeperClusterKey,
+      tags,
+    } = result.data.settings;
+
+    expect(aliveNodes).to.be.an('array');
+    expect(aliveNodes).to.be.empty;
+
+    expect(lastModified).to.be.a('number');
+
+    expect(state).to.be.undefined;
+
+    expect(error).to.be.undefined;
+
+    expect(name).to.be.a('string');
+    expect(name).to.eq(bkCluster.name);
+
+    expect(group).to.be.a('string');
+    expect(group).to.eq(bkCluster.group);
+
+    expect(nodeNames).to.be.an('array');
+    expect(nodeNames).have.lengthOf(1);
+
+    expect(clientPort).to.be.a('number');
+    expect(jmxPort).to.be.a('number');
+
+    expect(imageName).to.be.a('string');
+
+    expect(zookeeperClusterKey).to.be.an('object');
+    expect(zookeeperClusterKey).to.be.deep.eq(bkCluster.zookeeperClusterKey);
+
+    expect(tags).to.be.an('object');
+    expect(tags.name).to.eq(bkCluster.name);
+  });
 });
