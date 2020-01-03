@@ -21,12 +21,11 @@ import { useLocation, useParams } from 'react-router-dom';
 import { CellMeasurerCache } from 'react-virtualized/dist/commonjs/CellMeasurer';
 import { WindowScroller } from 'react-virtualized/dist/commonjs/WindowScroller';
 
-import * as inspectApi from 'api/inspectApi';
-import * as logApi from 'api/logApi';
+import * as context from 'context';
 import DataTable from './DataTable';
 import { tabName } from '../DevToolDialog';
-import { hashByGroupAndName } from 'utils/sha';
 import { useSnackbar } from 'context';
+import { usePrevious } from 'utils/hooks';
 
 // the react-virtualized <List> cached row style
 const cache = new CellMeasurerCache({
@@ -37,6 +36,18 @@ const cache = new CellMeasurerCache({
 const DataWindow = () => {
   const location = useLocation();
   const { workspaceName, pipelineName } = useParams();
+  const { setWorkspaceName, setPipelineName } = context.useApp();
+  const { fetchTopicData } = context.useTopicActions();
+  const {
+    fetchConfiguratorLog,
+    fetchZookeeperLog,
+    fetchBrokerLog,
+    fetchWorkerLog,
+    fetchStreamLog,
+  } = context.useLogActions();
+
+  const prevWorkspaceName = usePrevious(workspaceName);
+  const prevPipelineName = usePrevious(pipelineName);
 
   const searchParams = new URLSearchParams(location.search);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -56,33 +67,35 @@ const DataWindow = () => {
   const timeSeconds = searchParams.get('timeSeconds') || '';
   const stream = searchParams.get('stream') || '';
 
-  const fetchTopicData = useCallback(async () => {
+  React.useEffect(() => {
+    if (workspaceName && workspaceName !== prevWorkspaceName) {
+      setWorkspaceName(workspaceName);
+    }
+  }, [prevWorkspaceName, setWorkspaceName, workspaceName]);
+
+  React.useEffect(() => {
+    if (pipelineName && pipelineName !== prevPipelineName) {
+      setPipelineName(pipelineName);
+    }
+  }, [pipelineName, prevPipelineName, setPipelineName]);
+
+  const fetchTopicDataCallback = useCallback(async () => {
     if (type !== tabName.topic) return;
     setIsLoadingData(true);
-    let data = [];
-    const response = await inspectApi.getTopicData({
+    const response = await fetchTopicData({
       name: topicName,
-      group: hashByGroupAndName('workspace', workspaceName),
       limit: topicLimit,
       timeout: topicTimeout,
     });
 
-    if (!response.errors) {
-      data = response.data.messages.map(message => {
-        // we don't need the "tags" field in the topic data
-        if (message.value) delete message.value.tags;
-        return message;
-      });
-    }
-
-    setTopicResult(data);
+    setTopicResult(response.data);
     setIsLoadingData(false);
-  }, [type, topicName, workspaceName, topicLimit, topicTimeout]);
+  }, [type, topicName, topicLimit, topicTimeout, fetchTopicData]);
 
   useEffect(() => {
     if (!topicName) return;
-    fetchTopicData();
-  }, [topicName, fetchTopicData]);
+    fetchTopicDataCallback();
+  }, [topicName, fetchTopicDataCallback]);
 
   useEffect(() => {
     if (isEmpty(service)) return;
@@ -92,37 +105,28 @@ const DataWindow = () => {
       setIsLoadingData(true);
       switch (service) {
         case 'configurator':
-          response = await logApi.getConfiguratorLog({
+          response = await fetchConfiguratorLog({
             sinceSeconds: timeSeconds,
           });
           break;
         case 'zookeeper':
-          response = await logApi.getZookeeperLog({
-            name: workspaceName,
-            group: 'zookeeper',
+          response = await fetchZookeeperLog({
             sinceSeconds: timeSeconds,
           });
           break;
         case 'broker':
-          response = await logApi.getBrokerLog({
-            name: workspaceName,
-            group: 'broker',
+          response = await fetchBrokerLog({
             sinceSeconds: timeSeconds,
           });
           break;
         case 'worker':
-          response = await logApi.getWorkerLog({
-            name: workspaceName,
-            group: 'worker',
+          response = await fetchWorkerLog({
             sinceSeconds: timeSeconds,
           });
           break;
         case 'stream':
-          const pipelineGroup = hashByGroupAndName('workspace', workspaceName);
-          if (!isEmpty(stream) && !isEmpty(pipelineName)) {
-            response = await logApi.getStreamLog({
-              name: stream,
-              group: hashByGroupAndName(pipelineGroup, pipelineName),
+          if (!isEmpty(stream)) {
+            response = await fetchStreamLog({
               sinceSeconds: timeSeconds,
             });
           }
@@ -130,7 +134,6 @@ const DataWindow = () => {
         default:
       }
 
-      showMessage(response.title);
       setIsLoadingData(false);
 
       if (response && !response.errors) {
@@ -142,19 +145,20 @@ const DataWindow = () => {
         if (!isEmpty(result)) setLogData(result[0]);
         return;
       }
-
-      response.errors && showMessage(response.title);
     };
 
     fetchLogs();
   }, [
     hostname,
-    pipelineName,
     service,
     showMessage,
     stream,
     timeSeconds,
-    workspaceName,
+    fetchConfiguratorLog,
+    fetchZookeeperLog,
+    fetchBrokerLog,
+    fetchWorkerLog,
+    fetchStreamLog,
   ]);
 
   // we don't generate the data view if no query parameters existed

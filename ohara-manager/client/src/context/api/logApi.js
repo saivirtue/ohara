@@ -19,12 +19,17 @@ import * as logApi from 'api/logApi';
 import { validate } from './utils';
 
 export const createApi = context => {
-  const { brokerGroup, streamGroup, workerGroup, zookeeperGroup } = context;
+  const {
+    workspaceName,
+    brokerGroup,
+    streamGroup,
+    workerGroup,
+    zookeeperGroup,
+  } = context;
   if (!brokerGroup || !streamGroup || !workerGroup || !zookeeperGroup) return;
 
   return {
     fetchConfigurator: async values => {
-      validate(values);
       const res = await logApi.getConfiguratorLog(values);
       if (!isEmpty(res.errors)) {
         throw new Error(res.title);
@@ -32,8 +37,7 @@ export const createApi = context => {
       return res.data;
     },
     fetchZookeeper: async values => {
-      validate(values);
-      const params = { ...values, group: zookeeperGroup };
+      const params = { ...values, name: workspaceName, group: zookeeperGroup };
       const res = await logApi.getZookeeperLog(params);
       if (!isEmpty(res.errors)) {
         throw new Error(res.title);
@@ -41,8 +45,7 @@ export const createApi = context => {
       return res.data;
     },
     fetchBroker: async values => {
-      validate(values);
-      const params = { ...values, group: brokerGroup };
+      const params = { ...values, name: workspaceName, group: brokerGroup };
       const res = await logApi.getBrokerLog(params);
       if (!isEmpty(res.errors)) {
         throw new Error(res.title);
@@ -50,8 +53,7 @@ export const createApi = context => {
       return res.data;
     },
     fetchWorker: async values => {
-      validate(values);
-      const params = { ...values, group: workerGroup };
+      const params = { ...values, name: workspaceName, group: workerGroup };
       const res = await logApi.getWorkerLog(params);
       if (!isEmpty(res.errors)) {
         throw new Error(res.title);

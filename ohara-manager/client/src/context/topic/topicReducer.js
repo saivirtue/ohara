@@ -39,6 +39,12 @@ const reducer = (state, action) => {
         isFetching: true,
         error: null,
       };
+    case routines.fetchTopicDataRoutine.REQUEST:
+      return {
+        ...state,
+        isFetching: true,
+        error: null,
+      };
     case routines.fetchTopicsRoutine.SUCCESS:
       return {
         ...state,
@@ -64,6 +70,12 @@ const reducer = (state, action) => {
         ),
         lastUpdated: new Date(),
       };
+    case routines.fetchTopicDataRoutine.SUCCESS:
+      return {
+        ...state,
+        isFetching: false,
+        lastUpdated: new Date(),
+      };
     case routines.deleteTopicRoutine.SUCCESS:
       return {
         ...state,
@@ -75,6 +87,7 @@ const reducer = (state, action) => {
     case routines.createTopicRoutine.FAILURE:
     case routines.updateTopicRoutine.FAILURE:
     case routines.deleteTopicRoutine.FAILURE:
+    case routines.fetchTopicDataRoutine.FAILURE:
       return {
         ...state,
         isFetching: false,

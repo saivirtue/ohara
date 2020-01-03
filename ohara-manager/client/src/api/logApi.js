@@ -20,7 +20,7 @@ import * as URL from './utils/url';
 
 const url = URL.LOG_URL;
 
-export const services = {
+export const logServices = {
   configurator: 'configurator',
   zookeeper: 'zookeepers',
   broker: 'brokers',
@@ -30,11 +30,11 @@ export const services = {
 
 export const getConfiguratorLog = async (params = {}) => {
   const res = await axiosInstance.get(
-    `${url}/${services.configurator}${URL.toQueryParameters(params)}`,
+    `${url}/${logServices.configurator}${URL.toQueryParameters(params)}`,
   );
   const result = responseUtil(res, log);
   result.title =
-    `Get ${services.configurator} log ${getKey(params)} ` +
+    `Get ${logServices.configurator} log ${getKey(params)} ` +
     (result.errors ? 'failed.' : 'successful.');
   return result;
 };
@@ -42,11 +42,11 @@ export const getConfiguratorLog = async (params = {}) => {
 export const getZookeeperLog = async params => {
   const { name } = params;
   const res = await axiosInstance.get(
-    `${url}/${services.zookeeper}/${name}${URL.toQueryParameters(params)}`,
+    `${url}/${logServices.zookeeper}/${name}${URL.toQueryParameters(params)}`,
   );
   const result = responseUtil(res, log);
   result.title =
-    `Get ${services.zookeeper} log ${getKey(params)} ` +
+    `Get ${logServices.zookeeper} log ${getKey(params)} ` +
     (result.errors ? 'failed.' : 'successful.');
   return result;
 };
@@ -54,11 +54,11 @@ export const getZookeeperLog = async params => {
 export const getBrokerLog = async params => {
   const { name } = params;
   const res = await axiosInstance.get(
-    `${url}/${services.broker}/${name}${URL.toQueryParameters(params)}`,
+    `${url}/${logServices.broker}/${name}${URL.toQueryParameters(params)}`,
   );
   const result = responseUtil(res, log);
   result.title =
-    `Get ${services.broker} log ${getKey(params)} ` +
+    `Get ${logServices.broker} log ${getKey(params)} ` +
     (result.errors ? 'failed.' : 'successful.');
   return result;
 };
@@ -66,11 +66,11 @@ export const getBrokerLog = async params => {
 export const getWorkerLog = async params => {
   const { name } = params;
   const res = await axiosInstance.get(
-    `${url}/${services.worker}/${name}${URL.toQueryParameters(params)}`,
+    `${url}/${logServices.worker}/${name}${URL.toQueryParameters(params)}`,
   );
   const result = responseUtil(res, log);
   result.title =
-    `Get ${services.worker} log ${getKey(params)} ` +
+    `Get ${logServices.worker} log ${getKey(params)} ` +
     (result.errors ? 'failed.' : 'successful.');
   return result;
 };
@@ -78,11 +78,11 @@ export const getWorkerLog = async params => {
 export const getStreamLog = async params => {
   const { name } = params;
   const res = await axiosInstance.get(
-    `${url}/${services.stream}/${name}${URL.toQueryParameters(params)}`,
+    `${url}/${logServices.stream}/${name}${URL.toQueryParameters(params)}`,
   );
   const result = responseUtil(res, log);
   result.title =
-    `Get ${services.stream} log ${getKey(params)} ` +
+    `Get ${logServices.stream} log ${getKey(params)} ` +
     (result.errors ? 'failed.' : 'successful.');
   return result;
 };

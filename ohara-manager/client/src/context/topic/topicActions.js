@@ -101,5 +101,18 @@ export const createActions = context => {
         return action.failure(e.message);
       }
     },
+    fetchTopicData: async values => {
+      const routine = routines.fetchTopicDataRoutine;
+      if (state.isFetching) return;
+      try {
+        dispatch(routine.request());
+        const data = await topicApi.fetchData(values);
+        dispatch(routine.success(data));
+        return action.success(data);
+      } catch (e) {
+        dispatch(routine.failure(e.message));
+        return action.failure(e.message);
+      }
+    },
   };
 };

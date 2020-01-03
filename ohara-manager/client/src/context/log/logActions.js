@@ -20,12 +20,12 @@ import * as action from 'utils/action';
 export const createActions = context => {
   const { state, dispatch, logApi } = context;
   return {
-    fetchConfiguratorLog: async () => {
+    fetchConfiguratorLog: async values => {
       const routine = routines.fetchConfiguratorRoutine;
       if (state.isFetching || state.lastUpdated || state.error) return;
       try {
         dispatch(routine.request());
-        const data = await logApi.fetchConfigurator();
+        const data = await logApi.fetchConfigurator(values);
         dispatch(routine.success(data));
         return action.success(data);
       } catch (e) {

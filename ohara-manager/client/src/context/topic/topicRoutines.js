@@ -23,3 +23,4 @@ export const updateTopicRoutine = createRoutine('UPDATE_TOPIC');
 export const deleteTopicRoutine = createRoutine('DELETE_TOPIC');
 export const startTopicRoutine = createRoutine('START_TOPIC');
 export const stopTopicRoutine = createRoutine('STOP_TOPIC');
+export const fetchTopicDataRoutine = createRoutine('FETCH_TOPIC_DATA');

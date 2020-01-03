@@ -204,7 +204,7 @@ const Header = props => {
             currentTab={tabIndex}
             value={data.service}
             onChange={event => handleSelect(event, 'service')}
-            list={Object.keys(logApi.services)}
+            list={Object.keys(logApi.logServices)}
             setAnchor={handleSelectAnchor}
             anchor={selectAnchor}
             disabled={data.isLoading}
