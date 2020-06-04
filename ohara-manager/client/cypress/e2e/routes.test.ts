@@ -15,6 +15,7 @@
  */
 
 import { deleteAllServices } from '../utils';
+import * as generate from '../../src/utils/generate';
 
 // It's uppercase in AppBar
 const workspaceNameInAppBar = Cypress.env('servicePrefix')
@@ -40,59 +41,59 @@ describe('Redirect route', () => {
   before(async () => await deleteAllServices());
 
   it('should redirect to default workspace and pipeline', () => {
-    cy.createServices({
-      withWorkspace: true,
-      withTopic: true,
-    }).then((res) => {
-      cy.visit('/');
-      cy.findAllByText(workspaceNameInAppBar).should('exist');
+    const workspaceName = generate.serviceName({
+      prefix: Cypress.env('servicePrefix'),
+    });
+    cy.createWorkspace({ workspaceName });
 
-      cy.location().should((location) => {
-        expect(location.pathname).to.be.eq(`/${res.workspaceName}`);
-      });
+    cy.visit('/').findAllByText(workspaceNameInAppBar).should('exist');
 
-      // not exist workspace will redirect to default workspace
-      cy.visit('/fakeworkspacehaha');
+    cy.location().should((location) => {
+      expect(location.pathname).to.be.eq(`/${workspaceName}`);
+    });
 
-      cy.location().should((location) => {
-        expect(location.pathname).to.be.eq(`/${res.workspaceName}`);
-      });
+    // not exist workspace will redirect to default workspace
+    cy.visit('/fakeworkspacehaha');
 
-      // Add new pipeline
-      cy.findByText(/^pipelines$/i)
-        .siblings('svg')
-        .first()
-        .click();
-      cy.findByText(/^add a new pipeline$/i).should('exist');
+    cy.location().should((location) => {
+      expect(location.pathname).to.be.eq(`/${workspaceName}`);
+    });
 
-      cy.findByTestId('new-pipeline-dialog').find('input').type('pipeline1');
+    // Add new pipeline
+    cy.findByText(/^pipelines$/i)
+      .siblings('svg')
+      .first()
+      .click()
+      .findByText(/^add a new pipeline$/i)
+      .should('exist');
 
-      cy.findByText(/^add$/i).click();
+    cy.findByTestId('new-pipeline-dialog').find('input').type('pipeline1');
 
-      cy.location().should((location) => {
-        expect(location.pathname).to.be.eq(`/${res.workspaceName}/pipeline1`);
-      });
+    cy.findByText(/^add$/i).click();
 
-      // not exist workspace will redirect to default workspace with pipeline
-      cy.visit('/fakeworkspacehaha');
+    cy.location().should((location) => {
+      expect(location.pathname).to.be.eq(`/${workspaceName}/pipeline1`);
+    });
 
-      cy.location().should((location) => {
-        expect(location.pathname).to.be.eq(`/${res.workspaceName}/pipeline1`);
-      });
+    // not exist workspace will redirect to default workspace with pipeline
+    cy.visit('/fakeworkspacehaha');
 
-      // not exist pipeline will redirect to default workspace
-      cy.visit(`/${res.workspaceName}/foobar`);
+    cy.location().should((location) => {
+      expect(location.pathname).to.be.eq(`/${workspaceName}/pipeline1`);
+    });
 
-      cy.location().should((location) => {
-        expect(location.pathname).to.be.eq(`/${res.workspaceName}/pipeline1`);
-      });
+    // not exist pipeline will redirect to default workspace
+    cy.visit(`/${workspaceName}/foobar`);
 
-      // not exist workspace and pipeline will redirect to default workspace with pipeline
-      cy.visit(`/fakeworkspacehaha/foobar`);
+    cy.location().should((location) => {
+      expect(location.pathname).to.be.eq(`/${workspaceName}/pipeline1`);
+    });
 
-      cy.location().should((location) => {
-        expect(location.pathname).to.be.eq(`/${res.workspaceName}/pipeline1`);
-      });
+    // not exist workspace and pipeline will redirect to default workspace with pipeline
+    cy.visit(`/fakeworkspacehaha/foobar`);
+
+    cy.location().should((location) => {
+      expect(location.pathname).to.be.eq(`/${workspaceName}/pipeline1`);
     });
   });
 });

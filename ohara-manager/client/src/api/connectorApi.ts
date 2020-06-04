@@ -76,11 +76,3 @@ export const forceStop = (objectKey: ObjectKey) => {
     queryParams: { force: true },
   });
 };
-
-export const addNode = (objectKey: ObjectKey, nodeName: string) => {
-  return connectorApi.addNode<BasicResponse>({ objectKey, nodeName });
-};
-
-export const removeNode = (objectKey: ObjectKey, nodeName: string) => {
-  return connectorApi.removeNode<BasicResponse>({ objectKey, nodeName });
-};

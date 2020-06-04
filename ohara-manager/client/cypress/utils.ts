@@ -60,69 +60,62 @@ export const waitFor = async <T extends BasicResponse>(
   });
 };
 
-export const createServices = async ({
+export const createServicesInNodes = async ({
   withWorker = false,
   withBroker = false,
   withZookeeper = false,
-  withNode = false,
 } = {}) => {
   let result: { [k: string]: any } = {};
 
-  if (withNode) {
-    const node = {
-      hostname: generate.serviceName({ prefix: 'node' }),
-      port: generate.port(),
-      user: generate.userName(),
-      password: generate.password(),
-    };
-    const nodeRes = await nodeApi.create(node);
-    result.node = nodeRes.data;
+  const node = {
+    hostname: generate.serviceName({ prefix: 'node' }),
+    port: generate.port(),
+    user: generate.userName(),
+    password: generate.password(),
+  };
+  const nodeRes = await nodeApi.create(node);
+  result.node = nodeRes.data;
 
-    if (withZookeeper) {
-      const zookeeper = {
-        name: generate.serviceName({ prefix: 'zk' }),
+  if (withZookeeper) {
+    const zookeeper = {
+      name: generate.serviceName({ prefix: 'zk' }),
+      group: generate.serviceName({ prefix: 'group' }),
+      nodeNames: [node.hostname],
+    };
+    await zkApi.create(zookeeper);
+    await zkApi.start(zookeeper);
+    const zkRes = await waitFor(RESOURCE.ZOOKEEPER, zookeeper, waitForRunning);
+    result.zookeeper = zkRes.data;
+
+    if (withBroker) {
+      const broker = {
+        name: generate.serviceName({ prefix: 'bk' }),
         group: generate.serviceName({ prefix: 'group' }),
         nodeNames: [node.hostname],
+        zookeeperClusterKey: {
+          name: zookeeper.name,
+          group: zookeeper.group,
+        },
       };
-      await zkApi.create(zookeeper);
-      await zkApi.start(zookeeper);
-      const zkRes = await waitFor(
-        RESOURCE.ZOOKEEPER,
-        zookeeper,
-        waitForRunning,
-      );
-      result.zookeeper = zkRes.data;
+      await bkApi.create(broker);
+      await bkApi.start(broker);
+      const bkRes = await waitFor(RESOURCE.BROKER, broker, waitForRunning);
+      result.broker = bkRes.data;
 
-      if (withBroker) {
-        const broker = {
-          name: generate.serviceName({ prefix: 'bk' }),
+      if (withWorker) {
+        const worker = {
+          name: generate.serviceName({ prefix: 'wk' }),
           group: generate.serviceName({ prefix: 'group' }),
           nodeNames: [node.hostname],
-          zookeeperClusterKey: {
-            name: zookeeper.name,
-            group: zookeeper.group,
+          brokerClusterKey: {
+            name: broker.name,
+            group: broker.group,
           },
         };
-        await bkApi.create(broker);
-        await bkApi.start(broker);
-        const bkRes = await waitFor(RESOURCE.BROKER, broker, waitForRunning);
-        result.broker = bkRes.data;
-
-        if (withWorker) {
-          const worker = {
-            name: generate.serviceName({ prefix: 'wk' }),
-            group: generate.serviceName({ prefix: 'group' }),
-            nodeNames: [node.hostname],
-            brokerClusterKey: {
-              name: broker.name,
-              group: broker.group,
-            },
-          };
-          await wkApi.create(worker);
-          await wkApi.start(worker);
-          const wkRes = await waitFor(RESOURCE.WORKER, worker, waitForRunning);
-          result.worker = wkRes.data;
-        }
+        await wkApi.create(worker);
+        await wkApi.start(worker);
+        const wkRes = await waitFor(RESOURCE.WORKER, worker, waitForRunning);
+        result.worker = wkRes.data;
       }
     }
   }
@@ -137,7 +130,7 @@ export const deleteAllServices = async () => {
   // we don't care the execute order of each individual connect was done or not.
   // Using Promise.all() to make sure all connects were stopped & deleted.
   await Promise.all(
-    connectors.map(connector =>
+    connectors.map((connector) =>
       connectorApi
         .forceStop({ name: connector.name, group: connector.group })
         .then(() =>
@@ -162,7 +155,7 @@ export const deleteAllServices = async () => {
   // we don't care the execute order of each individual worker was done or not.
   // Using Promise.all() to make sure all workers were stopped & deleted.
   await Promise.all(
-    workers.map(wk =>
+    workers.map((wk) =>
       wkApi
         .forceStop({ name: wk.name, group: wk.group })
         .then(() =>
@@ -184,7 +177,7 @@ export const deleteAllServices = async () => {
   // we don't care the execute order of each individual stream was done or not.
   // Using Promise.all() to make sure all streams were stopped & deleted.
   await Promise.all(
-    streams.map(stream =>
+    streams.map((stream) =>
       streamApi
         .forceStop({ name: stream.name, group: stream.group })
         .then(() =>
@@ -206,7 +199,7 @@ export const deleteAllServices = async () => {
   // we don't care the execute order of each individual shabondi was done or not.
   // Using Promise.all() to make sure all shabondis were stopped & deleted.
   await Promise.all(
-    shabondis.map(shabondi =>
+    shabondis.map((shabondi) =>
       shabondiApi
         .forceStop({ name: shabondi.name, group: shabondi.group })
         .then(() =>
@@ -228,7 +221,7 @@ export const deleteAllServices = async () => {
   // we don't care the execute order of each individual topic was done or not.
   // Using Promise.all() to make sure all topics were stopped & deleted.
   await Promise.all(
-    topics.map(topic =>
+    topics.map((topic) =>
       topicApi.forceStop({ name: topic.name, group: topic.group }).then(() => {
         topicApi.remove({ name: topic.name, group: topic.group });
       }),
@@ -241,7 +234,7 @@ export const deleteAllServices = async () => {
   // we don't care the execute order of each individual broker was done or not.
   // Using Promise.all() to make sure all brokers were stopped & deleted.
   await Promise.all(
-    brokers.map(bk =>
+    brokers.map((bk) =>
       bkApi
         .forceStop({ name: bk.name, group: bk.group })
         .then(() =>
@@ -263,7 +256,7 @@ export const deleteAllServices = async () => {
   // we don't care the execute order of each individual zookeeper was done or not.
   // Using Promise.all() to make sure all zookeepers were stopped & deleted.
   await Promise.all(
-    zookeepers.map(zk =>
+    zookeepers.map((zk) =>
       zkApi
         .forceStop({ name: zk.name, group: zk.group })
         .then(() =>
@@ -286,7 +279,7 @@ export const deleteAllServices = async () => {
     const nodes = nodeRes.data;
     // we don't care the execute order of each individual node was done or not.
     // Using Promise.all() to make sure all nodes were deleted.
-    await Promise.all(nodes.map(node => nodeApi.remove(node.hostname)));
+    await Promise.all(nodes.map((node) => nodeApi.remove(node.hostname)));
   }
 
   // delete all files
@@ -294,14 +287,14 @@ export const deleteAllServices = async () => {
   const files = fileRes.data;
   // we don't care the execute order of each individual file was done or not.
   // Using Promise.all() to make sure all files were deleted.
-  await Promise.all(files.map(file => fileApi.remove(file)));
+  await Promise.all(files.map((file) => fileApi.remove(file)));
 
   // delete all pipelines
   const pipelineRes = await pipelineApi.getAll();
   const pipelines = pipelineRes.data;
   // we don't care the execute order of each individual pipeline was done or not.
   // Using Promise.all() to make sure all pipelines were deleted.
-  await Promise.all(pipelines.map(file => pipelineApi.remove(file)));
+  await Promise.all(pipelines.map((file) => pipelineApi.remove(file)));
 
   // delete all objects
   const objectRes = await objectApi.getAll();
@@ -309,17 +302,17 @@ export const deleteAllServices = async () => {
   // we don't care the execute order of each individual object was done or not.
   // Using Promise.all() to make sure all objects were deleted.
   await Promise.all(
-    objects.map(object => objectApi.remove(object as ObjectKey)),
+    objects.map((object) => objectApi.remove(object as ObjectKey)),
   );
 };
 
 export const assertSettingsByDefinitions = (
   data: { [k: string]: any },
-  definitions: SettingDef[] = [],
-  expectedResult: { [k: string]: any } = {},
+  definitions: SettingDef[],
+  expectedResult: { [k: string]: any },
 ) => {
   // check type
-  definitions.forEach(definition => {
+  definitions.forEach((definition) => {
     const value = data[definition.key];
     // don't assert the value if:
     // - it's internal

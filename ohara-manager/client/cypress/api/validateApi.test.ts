@@ -21,15 +21,14 @@
 import * as generate from '../../src/utils/generate';
 import * as topicApi from '../../src/api/topicApi';
 import * as validateApi from '../../src/api/validateApi';
-import { createServices, deleteAllServices } from '../utils';
+import { createServicesInNodes, deleteAllServices } from '../utils';
 import { SOURCES } from '../../src/api/apiInterface/connectorInterface';
 
 const generateValidation = async () => {
-  const { node, broker, worker } = await createServices({
+  const { node, broker, worker } = await createServicesInNodes({
     withWorker: true,
     withBroker: true,
     withZookeeper: true,
-    withNode: true,
   });
   const topic = {
     name: generate.serviceName({ prefix: 'topic' }),
@@ -82,7 +81,7 @@ describe('Validate API', () => {
 
     expect(settings.length > 0).to.be.true;
 
-    settings.forEach(report => {
+    settings.forEach((report) => {
       const { definition, value } = report;
       expect(definition).to.be.an('object');
 

@@ -66,7 +66,7 @@ describe('NodeDialog of AppBar', () => {
     cy.get('input[name=port]').type(generate.port().toString());
     cy.get('input[name=user]').type(generate.userName());
     cy.get('input[name=password]').type(generate.password());
-    cy.findByText(/^add$/i).click();
+    cy.findByText(/^create$/i).click();
 
     cy.findByTestId(`view-node-${hostname}`).click();
 
@@ -116,7 +116,7 @@ describe('NodeDialog of AppBar', () => {
     cy.get('input[name=port]').type(generate.port().toString());
     cy.get('input[name=user]').type(generate.userName());
     cy.get('input[name=password]').type(generate.password());
-    cy.findByText(/^add$/i).click();
+    cy.findByText(/^create$/i).click();
 
     cy.findByText(hostname1).should('exist');
 
@@ -126,7 +126,7 @@ describe('NodeDialog of AppBar', () => {
     cy.get('input[name=port]').type(generate.port().toString());
     cy.get('input[name=user]').type(generate.userName());
     cy.get('input[name=password]').type(generate.password());
-    cy.findByText(/^add$/i).click();
+    cy.findByText(/^create$/i).click();
 
     cy.findByText(hostname2).should('exist');
 
@@ -163,7 +163,7 @@ describe('NodeDialog of AppBar', () => {
       cy.get('input[name=port]').type(nodePort);
       cy.get('input[name=user]').type(nodeUser);
       cy.get('input[name=password]').type(nodePass);
-      cy.findByText(/^add$/i).click();
+      cy.findByText(/^create$/i).click();
     }
 
     cy.findByTestId(`view-node-${nodeHost}`).click();
@@ -233,7 +233,7 @@ describe('NodeDialog of workspaceQuick', () => {
     cy.get('input[name=port]').type(generate.port().toString());
     cy.get('input[name=user]').type(generate.userName());
     cy.get('input[name=password]').type(generate.password());
-    cy.findByText(/^add$/i).click();
+    cy.findByText(/^create$/i).click();
 
     cy.findByText(hostname1).should('exist');
 
@@ -243,7 +243,7 @@ describe('NodeDialog of workspaceQuick', () => {
     cy.get('input[name=port]').type(generate.port().toString());
     cy.get('input[name=user]').type(generate.userName());
     cy.get('input[name=password]').type(generate.password());
-    cy.findByText(/^add$/i).click();
+    cy.findByText(/^create$/i).click();
 
     cy.findByText(hostname2).should('exist');
 
@@ -253,7 +253,7 @@ describe('NodeDialog of workspaceQuick', () => {
     cy.get('input[name=port]').type(generate.port().toString());
     cy.get('input[name=user]').type(generate.userName());
     cy.get('input[name=password]').type(generate.password());
-    cy.findByText(/^add$/i).click();
+    cy.findByText(/^create$/i).click();
 
     cy.findByText(hostname3).should('exist');
 

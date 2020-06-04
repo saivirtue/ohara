@@ -24,7 +24,7 @@ import * as streamApi from '../../src/api/streamApi';
 import * as inspectApi from '../../src/api/inspectApi';
 import * as fileApi from '../../src/api/fileApi';
 import {
-  createServices,
+  createServicesInNodes,
   deleteAllServices,
   assertSettingsByDefinitions,
 } from '../utils';
@@ -38,10 +38,9 @@ const file = {
 };
 
 const generateStream = async () => {
-  const { node, broker } = await createServices({
+  const { node, broker } = await createServicesInNodes({
     withBroker: true,
     withZookeeper: true,
-    withNode: true,
   });
 
   const topic = {
@@ -82,7 +81,7 @@ const generateStream = async () => {
 describe('Stream API', () => {
   beforeEach(async () => {
     await deleteAllServices();
-    cy.createJar(file).then(params => fileApi.create(params));
+    cy.createJar(file).then((params) => fileApi.create(params));
   });
 
   it('createStream', async () => {
@@ -122,7 +121,7 @@ describe('Stream API', () => {
 
     const result = await streamApi.getAll();
 
-    const streams = result.data.map(zk => zk.name);
+    const streams = result.data.map((zk) => zk.name);
     expect(streams.includes(stream1.name)).to.be.true;
     expect(streams.includes(stream2.name)).to.be.true;
   });
@@ -135,7 +134,7 @@ describe('Stream API', () => {
     await streamApi.remove(stream);
     const result = await streamApi.getAll();
 
-    const streams = result.data.map(stream => stream.name);
+    const streams = result.data.map((stream) => stream.name);
     expect(streams.includes(stream.name)).to.be.false;
 
     // delete a running stream
@@ -197,7 +196,7 @@ describe('Stream API', () => {
     await streamApi.remove(stream);
     const result = await streamApi.getAll();
 
-    const streams = result.data.map(stream => stream.name);
+    const streams = result.data.map((stream) => stream.name);
     expect(streams.includes(stream.name)).to.be.false;
   });
 });

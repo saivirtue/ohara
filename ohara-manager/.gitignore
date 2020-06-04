@@ -7,3 +7,4 @@ yarn-error.log
 /client/cypress/screenshots
 /client/cypress/fixtures
 /client/cypress.env.json
+/client/.nyc_output

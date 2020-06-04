@@ -22,16 +22,15 @@ import * as generate from '../../src/utils/generate';
 import * as bkApi from '../../src/api/brokerApi';
 import * as inspectApi from '../../src/api/inspectApi';
 import {
-  createServices,
+  createServicesInNodes,
   deleteAllServices,
   assertSettingsByDefinitions,
 } from '../utils';
 import { SERVICE_STATE } from '../../src/api/apiInterface/clusterInterface';
 
 const generateBroker = async () => {
-  const { node, zookeeper } = await createServices({
+  const { node, zookeeper } = await createServicesInNodes({
     withZookeeper: true,
-    withNode: true,
   });
 
   expect(node).to.be.an('object');
@@ -97,7 +96,7 @@ describe('Broker API', () => {
 
     const result = await bkApi.getAll();
 
-    const brokers = result.data.map(bk => bk.name);
+    const brokers = result.data.map((bk) => bk.name);
     expect(brokers.includes(bkClusterOne.name)).to.be.true;
     expect(brokers.includes(bkClusterTwo.name)).to.be.true;
   });
@@ -111,7 +110,7 @@ describe('Broker API', () => {
 
     const result = await bkApi.getAll();
 
-    const brokers = result.data.map(bk => bk.name);
+    const brokers = result.data.map((bk) => bk.name);
     expect(brokers.includes(bkCluster.name)).to.be.false;
 
     // delete a running broker
@@ -177,7 +176,7 @@ describe('Broker API', () => {
     await bkApi.remove(bkCluster);
     const result = await bkApi.getAll();
 
-    const brokers = result.data.map(bk => bk.name);
+    const brokers = result.data.map((bk) => bk.name);
     expect(brokers.includes(bkCluster.name)).to.be.false;
   });
 
@@ -193,7 +192,7 @@ describe('Broker API', () => {
     expect(runningBkRes.data.state).to.eq(SERVICE_STATE.RUNNING);
     expect(runningBkRes.data.nodeNames).have.lengthOf(1);
 
-    const { node: newNode } = await createServices({ withNode: true });
+    const { node: newNode } = await createServicesInNodes();
     await bkApi.addNode(bkCluster, newNode.hostname);
     const result = await bkApi.get(bkCluster);
 
@@ -250,7 +249,7 @@ describe('Broker API', () => {
     expect(runningBkRes.data.state).to.eq(SERVICE_STATE.RUNNING);
     expect(runningBkRes.data.nodeNames).have.lengthOf(1);
 
-    const { node: newNode } = await createServices({ withNode: true });
+    const { node: newNode } = await createServicesInNodes();
     await bkApi.addNode(bkCluster, newNode.hostname);
     const twoNodeBkData = await bkApi.get(bkCluster);
     expect(twoNodeBkData.data.aliveNodes).to.be.an('array');

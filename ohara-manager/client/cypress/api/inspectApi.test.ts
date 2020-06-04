@@ -21,7 +21,7 @@
 import { KIND, MODE } from '../../src/const';
 import * as generate from '../../src/utils/generate';
 import * as inspect from '../../src/api/inspectApi';
-import { createServices, deleteAllServices } from '../utils';
+import { createServicesInNodes, deleteAllServices } from '../utils';
 import { InspectServiceResponse } from '../../src/api/apiInterface/inspectInterface';
 
 describe('Inspect API', () => {
@@ -93,11 +93,10 @@ describe('Inspect API', () => {
   });
 
   it('fetchServiceDefinitionByName', async () => {
-    const { zookeeper, broker, worker } = await createServices({
+    const { zookeeper, broker, worker } = await createServicesInNodes({
       withWorker: true,
       withBroker: true,
       withZookeeper: true,
-      withNode: true,
     });
 
     function expectResult(
@@ -133,7 +132,7 @@ describe('Inspect API', () => {
     expect(settingDefinitions).to.be.an('array');
 
     expect(classInfos).to.be.an('array');
-    classInfos.forEach(classInfo => {
+    classInfos.forEach((classInfo) => {
       const { className, classType, settingDefinitions } = classInfo;
 
       expect(className).to.be.a('string');
@@ -148,11 +147,10 @@ describe('Inspect API', () => {
 
   it('fetchConnectorDefinition', async () => {
     await deleteAllServices();
-    const { worker } = await createServices({
+    const { worker } = await createServicesInNodes({
       withWorker: true,
       withBroker: true,
       withZookeeper: true,
-      withNode: true,
     });
 
     const infoWorker = await inspect.getWorkerInfo({
@@ -161,7 +159,7 @@ describe('Inspect API', () => {
     });
 
     expect(infoWorker.data.classInfos).to.be.an('array');
-    infoWorker.data.classInfos.forEach(classInfo => {
+    infoWorker.data.classInfos.forEach((classInfo) => {
       const { className, classType, settingDefinitions } = classInfo;
       expect(className).to.be.a('string');
 
@@ -183,8 +181,8 @@ describe('Inspect API', () => {
     file.tags = { name: file.name };
 
     cy.createJar(file)
-      .then(params => inspect.getFileInfoWithoutUpload(params))
-      .then(result => {
+      .then((params) => inspect.getFileInfoWithoutUpload(params))
+      .then((result) => {
         const {
           name,
           group,
@@ -237,8 +235,8 @@ describe('Inspect API', () => {
     };
 
     cy.createJar(source)
-      .then(params => inspect.getFileInfoWithoutUpload(params))
-      .then(result => {
+      .then((params) => inspect.getFileInfoWithoutUpload(params))
+      .then((result) => {
         const {
           name,
           group,
@@ -291,8 +289,8 @@ describe('Inspect API', () => {
     };
 
     cy.createJar(sink)
-      .then(params => inspect.getFileInfoWithoutUpload(params))
-      .then(result => {
+      .then((params) => inspect.getFileInfoWithoutUpload(params))
+      .then((result) => {
         const {
           name,
           group,

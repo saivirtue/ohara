@@ -17,16 +17,18 @@
 const path = require('path');
 
 module.exports = {
-  mode: 'development',
   // make sure the source maps work
-  devtool: 'eval-source-map',
+  devtool: 'inline-source-map',
+  mode: 'development',
+  entry: path.resolve(__dirname, 'src/index.tsx'),
+
   // webpack will transpile TS and JS files
   resolve: {
-    extensions: ['.ts', '.tsx', '.js'],
+    extensions: ['.ts', '.tsx', '.js', '.json'],
     modules: [
-      path.resolve(__dirname, '../src'),
+      path.resolve(__dirname, 'src'),
+      path.resolve(__dirname, 'node_modules'),
       path.resolve(__dirname, '../node_modules'),
-      path.resolve(__dirname, '../../node_modules'),
     ],
     alias: {
       src: path.resolve(__dirname, 'src'),
@@ -34,20 +36,7 @@ module.exports = {
   },
   module: {
     rules: [
-      {
-        // every time webpack sees a TS file (except for node_modules)
-        // webpack will use "ts-loader" to transpile it to JavaScript
-        test: /\.(ts|tsx)?$/,
-        use: [
-          {
-            loader: 'ts-loader',
-            options: {
-              // skip typechecking for speed
-              transpileOnly: true,
-            },
-          },
-        ],
-      },
+      { test: /\.(ts|js)x?$/, loader: 'babel-loader', exclude: /node_modules/ },
     ],
   },
 };

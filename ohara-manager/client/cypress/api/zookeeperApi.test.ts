@@ -22,14 +22,14 @@ import * as generate from '../../src/utils/generate';
 import * as zkApi from '../../src/api/zookeeperApi';
 import * as inspectApi from '../../src/api/inspectApi';
 import {
-  createServices,
+  createServicesInNodes,
   deleteAllServices,
   assertSettingsByDefinitions,
 } from '../utils';
 import { SERVICE_STATE } from '../../src/api/apiInterface/clusterInterface';
 
 const generateZookeeper = async () => {
-  const { node } = await createServices({ withNode: true });
+  const { node } = await createServicesInNodes();
   const name = generate.serviceName({ prefix: 'zk' });
   const group = generate.serviceName({ prefix: 'group' });
   const zookeeper = {
@@ -83,7 +83,7 @@ describe('Zookeeper API', () => {
 
     const result = await zkApi.getAll();
 
-    const zookeepers = result.data.map(zk => zk.name);
+    const zookeepers = result.data.map((zk) => zk.name);
     expect(zookeepers.includes(zkClusterOne.name)).to.be.true;
     expect(zookeepers.includes(zkClusterTwo.name)).to.be.true;
   });
@@ -96,7 +96,7 @@ describe('Zookeeper API', () => {
     await zkApi.remove(zkCluster);
     const result = await zkApi.getAll();
 
-    const zookeepers = result.data.map(zk => zk.name);
+    const zookeepers = result.data.map((zk) => zk.name);
     expect(zookeepers.includes(zkCluster.name)).to.be.false;
 
     // delete a running zookeeper
@@ -163,7 +163,7 @@ describe('Zookeeper API', () => {
     await zkApi.remove(zkCluster);
     const result = await zkApi.getAll();
 
-    const zookeepers = result.data.map(zk => zk.name);
+    const zookeepers = result.data.map((zk) => zk.name);
     expect(zookeepers.includes(zkCluster.name)).to.be.false;
   });
 });

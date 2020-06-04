@@ -41,8 +41,7 @@ export const useStatusText = () => {
   const { tabName } = context.useDevTool();
   const { query: logQuery } = hooks.useDevToolLog();
   const { timeGroup, timeRange, startTime, endTime } = logQuery;
-  const { data } = hooks.useDevToolTopicData();
-  const messages = get(data, 'messages', []);
+  const { data: messages } = hooks.useDevToolTopicData();
   const currentLog = useCurrentLogs();
 
   return useMemo(() => {

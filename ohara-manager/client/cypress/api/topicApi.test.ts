@@ -22,16 +22,15 @@ import * as generate from '../../src/utils/generate';
 import * as topicApi from '../../src/api/topicApi';
 import * as inspectApi from '../../src/api/inspectApi';
 import {
-  createServices,
+  createServicesInNodes,
   deleteAllServices,
   assertSettingsByDefinitions,
 } from '../utils';
 
 const generateTopic = async () => {
-  const { node, broker } = await createServices({
+  const { node, broker } = await createServicesInNodes({
     withBroker: true,
     withZookeeper: true,
-    withNode: true,
   });
   const topicName = generate.serviceName({ prefix: 'topic' });
   const topic = {
@@ -88,7 +87,7 @@ describe('Topic API', () => {
 
     const result = await topicApi.getAll();
 
-    const topics = result.data.map(topic => topic.name);
+    const topics = result.data.map((topic) => topic.name);
     expect(topics.includes(topic1.name)).to.be.true;
     expect(topics.includes(topic2.name)).to.be.true;
   });
@@ -101,7 +100,7 @@ describe('Topic API', () => {
     await topicApi.remove(topic);
     const result = await topicApi.getAll();
 
-    const topics = result.data.map(topic => topic.name);
+    const topics = result.data.map((topic) => topic.name);
     expect(topics.includes(topic.name)).to.be.false;
 
     // delete a running topic
@@ -164,7 +163,7 @@ describe('Topic API', () => {
     await topicApi.remove(topic);
     const result = await topicApi.getAll();
 
-    const topics = result.data.map(topic => topic.name);
+    const topics = result.data.map((topic) => topic.name);
     expect(topics.includes(topic.name)).to.be.false;
   });
 });

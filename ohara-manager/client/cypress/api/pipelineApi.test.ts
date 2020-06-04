@@ -23,15 +23,14 @@ import * as generate from '../../src/utils/generate';
 import * as topicApi from '../../src/api/topicApi';
 import * as connectorApi from '../../src/api/connectorApi';
 import * as pipelineApi from '../../src/api/pipelineApi';
-import { createServices, deleteAllServices } from '../utils';
+import { createServicesInNodes, deleteAllServices } from '../utils';
 import { SOURCES, SINKS } from '../../src/api/apiInterface/connectorInterface';
 
 const generatePipeline = async () => {
-  const { node, broker, worker } = await createServices({
+  const { node, broker, worker } = await createServicesInNodes({
     withWorker: true,
     withBroker: true,
     withZookeeper: true,
-    withNode: true,
   });
   const topic = {
     name: generate.serviceName({ prefix: 'topic' }),
@@ -72,6 +71,9 @@ const generatePipeline = async () => {
   const pipeline = {
     name: pipelineName,
     group: generate.serviceName({ prefix: 'group' }),
+    objects: [],
+    jarKeys: [],
+    lastModified: 0,
     endpoints: [
       {
         name: connectorSource.name,
@@ -150,7 +152,7 @@ describe('Pipeline API', () => {
 
     const result = await pipelineApi.getAll();
 
-    const pipelines = result.data.map(pipeline => pipeline.name);
+    const pipelines = result.data.map((pipeline) => pipeline.name);
     expect(pipelines.includes(pipelineOne.name)).to.be.true;
     expect(pipelines.includes(pipelineTwo.name)).to.be.true;
   });
@@ -162,7 +164,7 @@ describe('Pipeline API', () => {
     await pipelineApi.remove(pipeline);
     const result = await pipelineApi.getAll();
 
-    expect(result.data.map(p => p.name).includes(pipeline.name)).to.be.false;
+    expect(result.data.map((p) => p.name).includes(pipeline.name)).to.be.false;
   });
 
   it('updatePipeline', async () => {
@@ -199,7 +201,7 @@ describe('Pipeline API', () => {
     const pipeline = await generatePipeline();
     const result = await pipelineApi.create(pipeline);
 
-    const source = result.data.objects.find(obj => obj.kind === KIND.source);
+    const source = result.data.objects.find((obj) => obj.kind === KIND.source);
     expect(source).to.be.not.undefined;
 
     if (source) {

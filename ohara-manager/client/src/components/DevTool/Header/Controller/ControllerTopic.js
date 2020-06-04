@@ -57,20 +57,19 @@ const ControllerTopic = () => {
 
   return (
     <>
-      <Tooltip title="Select topic">
-        <Select
-          disabled={isFetching || isEmpty(topics)}
-          list={topics.map((topic) => ({
-            displayName: topic.displayName,
-            value: topic.name,
-          }))}
-          onChange={(event) =>
-            prevName !== event.target.value &&
-            setTopicQueryParams({ name: event.target.value })
-          }
-          value={name || ''}
-        />
-      </Tooltip>
+      <Select
+        disabled={isFetching || isEmpty(topics)}
+        list={topics.map((topic) => ({
+          displayName: topic.displayName,
+          value: topic.name,
+        }))}
+        onChange={(event) =>
+          prevName !== event.target.value &&
+          setTopicQueryParams({ name: event.target.value })
+        }
+        testId="devtool-topic-list"
+        value={name || ''}
+      />
       <Tooltip title="Fetch the data again">
         <IconButton
           className="item"

@@ -22,8 +22,10 @@ import * as generate from '../../src/utils/generate';
 import * as logApi from '../../src/api/logApi';
 import * as topicApi from '../../src/api/topicApi';
 import * as streamApi from '../../src/api/streamApi';
+import * as shabondiApi from '../../src/api/shabondiApi';
 import * as fileApi from '../../src/api/fileApi';
-import { createServices, deleteAllServices } from '../utils';
+import { createServicesInNodes, deleteAllServices } from '../utils';
+import { SOURCES } from '../../src/api/apiInterface/connectorInterface';
 
 const file = {
   fixturePath: 'stream',
@@ -33,11 +35,10 @@ const file = {
 };
 
 const generateCluster = async () => {
-  const result = await createServices({
+  const result = await createServicesInNodes({
     withWorker: true,
     withBroker: true,
     withZookeeper: true,
-    withNode: true,
   });
   return result;
 };
@@ -45,7 +46,7 @@ const generateCluster = async () => {
 describe('Log API', () => {
   beforeEach(async () => {
     await deleteAllServices();
-    cy.createJar(file).then(params => fileApi.create(params));
+    cy.createJar(file).then((params) => fileApi.create(params));
   });
 
   it('fetchConfiguratorLog', async () => {
@@ -114,5 +115,27 @@ describe('Log API', () => {
     expect(logStream.data.clusterKey.name).to.be.eq(stream.name);
     expect(logStream.data.clusterKey.group).to.be.eq(stream.group);
     expect(logStream.data.logs).to.be.an('array');
+
+    const shabondi = {
+      name: generate.serviceName({ prefix: 'shabondi' }),
+      group: generate.serviceName({ prefix: 'group' }),
+      shabondi__class: SOURCES.shabondi,
+      shabondi__client__port: 1234,
+      nodeNames: [node.hostname],
+      brokerClusterKey: {
+        name: broker.name,
+        group: broker.group,
+      },
+      shabondi__source__toTopics: [{ name: topic.name, group: topic.group }],
+      shabondi__sink__fromTopics: [{ name: topic.name, group: topic.group }],
+    };
+    await shabondiApi.create(shabondi);
+    await shabondiApi.start(shabondi);
+
+    const logShabondi = await logApi.getShabondiLog(shabondi);
+
+    expect(logShabondi.data.clusterKey.name).to.be.eq(shabondi.name);
+    expect(logShabondi.data.clusterKey.group).to.be.eq(shabondi.group);
+    expect(logShabondi.data.logs).to.be.an('array');
   });
 });

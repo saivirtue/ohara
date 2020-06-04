@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// We need to declare a overload function for get(objectKey) and get(group)
-/* eslint-disable no-dupe-class-members */
 
 import axios, { AxiosResponse, AxiosInstance, AxiosTransformer } from 'axios';
 import { isArray, isPlainObject, has, cloneDeep, capitalize } from 'lodash';
@@ -76,7 +74,7 @@ const replaceKeyInObject = (
     : cloneDeep([obj]);
   newObjs.forEach((newObj, i) => {
     if (!isPlainObject(newObj)) return;
-    Object.keys(newObj).forEach(key => {
+    Object.keys(newObj).forEach((key) => {
       if (isPlainObject(newObjs[i][key])) {
         const obj = replaceKeyInObject(newObjs[i][key], originStr, changeStr);
         newObjs[i][key] = obj;
@@ -94,7 +92,7 @@ const createAxios = ({ timeout = 20000 }: { timeout?: number } = {}) => {
   const instance = axios.create({
     baseURL: '/api',
     headers: { 'Content-Type': 'application/json' },
-    validateStatus: status => status >= 200 && status < 300,
+    validateStatus: (status) => status >= 200 && status < 300,
     // set an acceptable default timeout (20 seconds) to avoid infinite request
     timeout,
     transformRequest: [
@@ -122,7 +120,7 @@ const createAxios = ({ timeout = 20000 }: { timeout?: number } = {}) => {
 
   // Add a response interceptor
   instance.interceptors.response.use(
-    response => {
+    (response) => {
       const enrichRes: AxiosData = {
         meta: {
           url: response.config.url,
@@ -137,7 +135,7 @@ const createAxios = ({ timeout = 20000 }: { timeout?: number } = {}) => {
         data: enrichRes,
       };
     },
-    error => {
+    (error) => {
       //initial the error response data
       let errorRes: AxiosResponse<AxiosData> = {
         status: -1,

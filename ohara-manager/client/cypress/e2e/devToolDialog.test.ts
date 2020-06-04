@@ -15,6 +15,8 @@
  */
 
 import { deleteAllServices } from '../utils';
+import { KIND } from '../../src/const';
+import * as generate from '../../src/utils/generate';
 
 describe('DevToolDialog - Topics tab', () => {
   beforeEach(async () => await deleteAllServices());
@@ -30,153 +32,191 @@ describe('DevToolDialog - Topics tab', () => {
     cy.findByTitle('Developer Tools').click();
     cy.findByText(/^topics$/i).should('exist');
 
-    // check the topic Select component
-    cy.findByTitle('Select topic')
-      .should('have.length', 1)
-      .click()
-      .get('ul')
-      .should('be.empty');
+    // since there are no topics, we should not able to click dropdown list
+    cy.findByTestId('devtool-topic-list')
+      .find('input')
+      .should('not.be.visible');
   });
 
   it('with an exist workspace, topic list of devTool should work normally', () => {
-    cy.createServices({
-      withWorkspace: true,
-      withTopic: true,
-    }).then((res) => {
-      cy.produceTopicData(res.workspaceName, res.topic).visit('/', {
-        onBeforeLoad(win) {
-          // to surveillance the window.open() event
-          // we stub it and do nothing
-          cy.stub(win, 'open');
-        },
-      });
+    const workspaceName = generate.serviceName({ length: 10 });
+    const sharedTopicName = generate.serviceName({ prefix: 'topic' });
+    cy.createWorkspace({ workspaceName });
 
-      cy.findAllByText(`${res.workspaceName}`, { exact: false }).should(
-        'exist',
-      );
+    // Create a new topic
+    // click the settings dialog
+    cy.findByText(workspaceName).click();
+    cy.contains('li', 'Settings').click();
+    // click the topics button
+    cy.findAllByText(/^topics in this workspace$/i).click({ force: true });
+    // create topic
+    cy.findByTitle('Create Topic').should('be.enabled').click();
+    cy.findAllByLabelText('Topic name', { exact: false })
+      .filter(':visible')
+      .type(sharedTopicName);
+    cy.findAllByLabelText('Partitions', { exact: false })
+      .filter(':visible')
+      .type('1');
+    cy.findAllByLabelText('Replication factor', { exact: false })
+      .filter(':visible')
+      .type('1');
+    cy.findAllByText(/^create$/i)
+      .filter(':visible')
+      .click();
+    // the new added topic should exist
+    cy.findByText(sharedTopicName).should('exist');
+    cy.contains('td', 'RUNNING')
+      .should('exist')
+      // press "ESC" again back to homepage
+      .trigger('keydown', { keyCode: 27, which: 27 });
 
-      // Check the topic tab exist
-      cy.findByTitle('Developer Tools').click();
-      // Check the status bar of no data
-      cy.findByText(/^no topic data$/i).should('exist');
+    // Add a new pipeline
+    // since devTool could only see the topics in pipeline
+    cy.findByText(/^pipelines$/i)
+      .siblings('svg')
+      .first()
+      .click()
+      .findByText(/^add a new pipeline$/i)
+      .should('exist');
+    cy.findByTestId('new-pipeline-dialog').find('input').type('pipeline1');
+    cy.findByText(/^add$/i).click();
 
-      cy.findByTitle('Select topic').click();
-      cy.findByText(res?.topic?.data.name).click();
+    // check the toolbox
+    cy.findByText(/^toolbox$/i).should('exist');
+    // add the topic
+    cy.addElement(sharedTopicName, KIND.topic);
 
-      // Check the topic data detail view
-      cy.findByTestId('view-topic-table')
-        .should('exist')
-        .get('tbody tr')
-        .should('have.length.greaterThan', 0);
-      cy.findByTestId('detail-view-icon-0').click();
-
-      // Check the status bar
-      cy.findByText(/^10 rows per query$/i).should('exist');
-
-      // the detail view should exist
-      cy.findByTestId('topic-detail-view')
-        .should('exist')
-        .find('button')
-        .click();
-
-      // refresh button
-      cy.findByTitle('Fetch the data again')
-        .click()
-        .get('table')
-        .should('exist');
-
-      // query button
-      cy.findByTitle('Query with different parameters').click();
-      cy.findByText(/^query$/i)
-        .click()
-        .get('table')
-        .should('exist');
-      cy.findByText(/^rows per query$/i)
-        .parent()
-        .find('input[type=number]')
-        .first()
-        .type('{esc}');
-
-      // open new window button
-      cy.findByTitle('Open in a new window').click();
-      cy.window().its('open').should('be.called');
-
-      // verify the switching tab operations work normally
-      cy.findByText(/^logs$/i).click();
-      cy.findByTestId('log-type-select').click();
-      cy.findByText(/^worker$/i).click();
-      cy.findByTestId('view-log-list').should('exist');
-      // switch back again should be ok
-      cy.findAllByText(/^topics$/i)
-        .parents('button')
-        .first()
-        .click();
-      cy.findByTestId('view-topic-table').should('exist');
-
-      // close button
-      cy.findByTitle('Close this panel').click();
+    cy.produceTopicData(workspaceName, sharedTopicName).visit('/', {
+      onBeforeLoad(win) {
+        // to surveillance the window.open() event
+        // we stub it and do nothing
+        cy.stub(win, 'open');
+      },
     });
+
+    cy.findAllByText(`${workspaceName}`, { exact: false }).should('exist');
+
+    // Check the topic tab exist
+    cy.findByTitle('Developer Tools').click();
+    // Check the status bar of no data
+    cy.findByText(/^no topic data$/i).should('exist');
+
+    cy.findByTestId('devtool-topic-list').click();
+    cy.findAllByText(sharedTopicName).filter('li[role="option"]').click();
+
+    // Check the topic data detail view
+    cy.findByTestId('view-topic-table')
+      .should('exist')
+      .get('tbody tr')
+      .should('have.length.greaterThan', 0)
+      .findByTestId('detail-view-icon-0')
+      .click();
+
+    // the detail view should exist
+    cy.findByTestId('topic-detail-view').should('exist').find('button').click();
+
+    // Check the status bar
+    cy.findByText(/^10 rows per query$/i).should('exist');
+
+    // refresh button
+    cy.findByTitle('Fetch the data again').click().get('table').should('exist');
+
+    // query button
+    cy.findByTitle('Query with different parameters')
+      .click()
+      .findByText(/^query$/i)
+      .click()
+      .get('table')
+      .should('exist');
+    cy.findByText(/^rows per query$/i)
+      .parent()
+      .find('input[type=number]')
+      .first()
+      .type('{esc}');
+
+    // open new window button
+    cy.findByTitle('Open in a new window').click();
+    cy.window().its('open').should('be.called');
+
+    // verify the switching tab operations work normally
+    cy.findByText(/^logs$/i).click();
+    cy.findByTestId('log-type-select').click();
+    cy.findByText(/^worker$/i).click();
+    cy.findByTestId('view-log-list').should('exist');
+    // switch back again should be ok
+    cy.findAllByText(/^topics$/i)
+      .parents('button')
+      .first()
+      .click();
+    cy.findByTestId('view-topic-table').should('exist');
+
+    // close button
+    cy.findByTitle('Close this panel').click();
   });
 });
 
 describe('DevToolDialog - Logs tab', () => {
   beforeEach(async () => await deleteAllServices());
 
-  it.only('with an exist workspace, configurator log of devTool should work normally', () => {
-    cy.createServices({
-      withWorkspace: true,
-    }).then((res) => {
-      cy.visit(`/${res.workspaceName}`, {
-        onBeforeLoad(win) {
-          // to surveillance the window.open() event
-          // we stub it and do nothing
-          cy.stub(win, 'open');
-        },
-      });
+  it('with an exist workspace, configurator log of devTool should work normally', () => {
+    const workspaceName = generate.serviceName({ length: 10 });
+    cy.createWorkspace({ workspaceName });
 
-      cy.findAllByText(`${res.workspaceName}`, { exact: false }).should(
-        'exist',
-      );
-
-      // Check the log tab exist
-      cy.findByTitle('Developer Tools').click();
-      cy.findByText(/^logs$/i).click();
-
-      // Check the status bar of no data
-      cy.findByText(/^no log data$/i).should('exist');
-
-      // Check the logType dropdown list
-      cy.findByTestId('log-type-select').click();
-
-      // Check the log data of configurator
-      cy.findByText(/^configurator$/i).click();
-      cy.findByTestId('view-log-list').should('exist');
-
-      // Check the status bar
-      cy.findByText(/^latest 10 minutes$/i).should('exist');
-
-      // refresh button
-      cy.get('span[title="Fetch the data again"] > button:enabled').click();
-      cy.findByTestId('view-log-list').should('exist');
-
-      // query button
-      cy.get(
-        'span[title="Query with different parameters"] > button:enabled',
-      ).click();
-      cy.findByTestId('log-query-popover').find('button').click();
-      cy.findByTestId('view-log-list').should('exist');
-      cy.findByText(/^minutes per query$/i)
-        .parent()
-        .find('input[type=number]')
-        .first()
-        .type('{esc}');
-
-      // open new window button
-      cy.findByTitle('Open in a new window').click();
-      cy.window().its('open').should('be.called');
-
-      // close button
-      cy.findByTitle('Close this panel').click();
+    cy.visit(`/${workspaceName}`, {
+      onBeforeLoad(win) {
+        // to surveillance the window.open() event
+        // we stub it and do nothing
+        cy.stub(win, 'open');
+      },
     });
+
+    cy.findAllByText(`${workspaceName}`, { exact: false }).should('exist');
+
+    // Check the log tab exist
+    cy.findByTitle('Developer Tools')
+      .click()
+      .findByText(/^logs$/i)
+      .click();
+
+    // Check the status bar of no data
+    cy.findByText(/^no log data$/i).should('exist');
+
+    // Check the logType dropdown list
+    cy.findByTestId('log-type-select').click();
+
+    // Check the log data of configurator
+    cy.findByText(/^configurator$/i).click();
+    cy.findByTestId('view-log-list').should('exist');
+
+    // Check the status bar
+    cy.findByText(/^latest 10 minutes$/i).should('exist');
+
+    // refresh button
+    cy.get('span[title="Fetch the data again"] > button:enabled')
+      .click()
+      .findByTestId('view-log-list')
+      .should('exist');
+
+    // query button
+    cy.get(
+      'span[title="Query with different parameters"] > button:enabled',
+    ).click();
+    cy.findByTestId('log-query-popover')
+      .find('button')
+      .click()
+      .findByTestId('view-log-list')
+      .should('exist');
+    cy.findByText(/^minutes per query$/i)
+      .parent()
+      .find('input[type=number]')
+      .first()
+      .type('{esc}');
+
+    // open new window button
+    cy.findByTitle('Open in a new window').click();
+    cy.window().its('open').should('be.called');
+
+    // close button
+    cy.findByTitle('Close this panel').click();
   });
 });

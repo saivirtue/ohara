@@ -15,7 +15,6 @@
  */
 
 import { KIND, CELL_TYPES } from '../../src/const';
-import { capitalize } from 'lodash';
 import * as generate from '../../src/utils/generate';
 import { deleteAllServices } from '../utils';
 import { SOURCES, SINKS } from '../../src/api/apiInterface/connectorInterface';
@@ -27,146 +26,6 @@ const ACTIONS = {
 };
 const sources = Object.values(SOURCES).sort();
 const sinks = Object.values(SINKS).sort();
-let topics: string[] = [];
-
-Cypress.Commands.add('addElement', (name, kind, className) => {
-  cy.log(`add element: ${name} of ${kind} with className ${className}`);
-  // toolbox: 272 width + navigator: 240 width + appBar: 64 width, we need to avoid covering it
-  const initialX = 600;
-  // the controllers tab has approximate 72 height, we need to avoid covering it
-  const initialY = 100;
-  const shiftWidth = 350;
-  const shiftHeight = 110;
-
-  cy.get('body').then(($body) => {
-    let size = topics.length;
-    cy.log(
-      'calculate the size of elements(source, sink, stream, topic) in pipeline',
-    );
-    if ($body.find('div.connector').length > 0)
-      size = size + $body.find('div.connector').length;
-
-    cy.findByText(capitalize(kind)).should('exist').click();
-
-    // re-render the cell position to maximize the available space
-    // the view of cells will be a [n, 2] matrix
-    const x = size % 2 === 0 ? initialX : initialX + shiftWidth;
-    const y = initialY + ~~(size / 2) * shiftHeight;
-    cy.log(`element position: ${x}, ${y}`);
-
-    // wait a little time for the toolbox list rendered
-    cy.wait(2000);
-
-    if (kind === KIND.source || kind === KIND.sink) {
-      const elementIndex =
-        kind === KIND.source
-          ? sources.indexOf(className)
-          : sinks.indexOf(className);
-
-      cy.findByTestId('toolbox-draggable')
-        .find(`g[data-type="${CELL_TYPES.ELEMENT}"]:visible`)
-        // the element index to be added
-        .eq(elementIndex)
-        .dragAndDrop(x, y);
-
-      // type the name and add
-      cy.findByLabelText(`${capitalize(kind)} name`, { exact: false }).type(
-        name,
-      );
-      cy.findAllByText(/^add$/i).filter(':visible').click();
-    } else if (kind === KIND.topic) {
-      topics.push(name);
-      cy.log(`Available topics in this pipeline: ${topics.join(',')}`);
-      if (!name.startsWith('T')) {
-        // create a shared topic
-        cy.findByText('Add topics').siblings('button').first().click();
-
-        cy.findAllByLabelText('topic name', { exact: false })
-          .filter(':visible')
-          .type(name);
-        cy.findAllByLabelText('partitions', { exact: false })
-          .filter(':visible')
-          .type('1');
-        cy.findAllByLabelText('replication factor', { exact: false })
-          .filter(':visible')
-          .type('1');
-        cy.findAllByText(/^add$/i).filter(':visible').click();
-
-        cy.findByText(name).should('exist');
-
-        // wait a little time for the topic show in toolbox
-        cy.wait(3000);
-
-        cy.findByTestId('toolbox-draggable')
-          .find(`g[data-type="${CELL_TYPES.ELEMENT}"]:visible`)
-          // the element index to be added
-          // the pipeline-only element is always first, we shift one element
-          .eq(topics.sort().indexOf(name) + 1)
-          .dragAndDrop(x, y);
-      } else {
-        // create a pipeline-only topic
-        cy.findByTestId('toolbox-draggable')
-          .find(`g[data-type="${CELL_TYPES.ELEMENT}"]:visible`)
-          // the only "draggable" cell is pipeline-only topic
-          .first()
-          .dragAndDrop(x, y);
-      }
-    } else if (kind === KIND.stream) {
-      cy.findByTestId('toolbox-draggable')
-        .find(`g[data-type="${CELL_TYPES.ELEMENT}"]:visible`)
-        // we only got 1 class for the uploaded stream jar
-        // it's ok to assert the first element is the "stream class"
-        .eq(0)
-        .dragAndDrop(x, y);
-
-      // type the name and add
-      cy.findByLabelText(`${capitalize(kind)} name`, { exact: false }).type(
-        name,
-      );
-      cy.findAllByText(/^add$/i).filter(':visible').click();
-    }
-
-    // wait a little time for the cell added
-    cy.wait(3000);
-
-    // close this panel
-    cy.findByText(capitalize(kind)).click();
-    cy.end();
-  });
-});
-
-Cypress.Commands.add('getCell', (name) => {
-  // open the cell menu
-  cy.findAllByText(name)
-    .filter(':visible')
-    .should('exist')
-    .parents(
-      name.startsWith('topic') || name.startsWith('T')
-        ? 'div.topic'
-        : 'div.connector',
-    )
-    .first()
-    .then((el) => {
-      const testId = el[0].getAttribute('data-testid');
-      return cy.get(`g[model-id="${testId}"]`);
-    });
-});
-
-Cypress.Commands.add('cellAction', (name, action) => {
-  // open the cell menu
-  cy.findAllByText(name)
-    .filter(':visible')
-    .should('exist')
-    .parents(
-      name.startsWith('topic') || name.startsWith('T')
-        ? 'div.topic'
-        : 'div.connector',
-    )
-    .first()
-    .within(() => {
-      cy.get(`button.${action}:visible`);
-    });
-});
 
 describe('ToolBox of Pipeline', () => {
   before(async () => await deleteAllServices());
@@ -392,9 +251,6 @@ describe.skip('Element Links of Pipeline', () => {
       cy.findAllByText(element).filter(':visible').should('not.exist');
       cy.wait(2000);
     });
-
-    // clear the global topics
-    topics = [];
   });
 
   it('tests of stream, connector and topic links in pipeline', () => {
@@ -471,9 +327,6 @@ describe.skip('Element Links of Pipeline', () => {
       .siblings('div')
       .first()
       .click();
-
-    // clear the global topics
-    topics = [];
   });
 });
 
