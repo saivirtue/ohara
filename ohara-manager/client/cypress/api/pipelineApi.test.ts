@@ -18,13 +18,15 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 // eslint is complaining about `expect(thing).to.be.undefined`
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import { KIND } from '../../src/const';
 import * as generate from '../../src/utils/generate';
 import * as topicApi from '../../src/api/topicApi';
 import * as connectorApi from '../../src/api/connectorApi';
 import * as pipelineApi from '../../src/api/pipelineApi';
-import { createServicesInNodes, deleteAllServices } from '../utils';
 import { SOURCES, SINKS } from '../../src/api/apiInterface/connectorInterface';
+import { createServicesInNodes, deleteAllServices } from '../utils';
 
 const generatePipeline = async () => {
   const { node, broker, worker } = await createServicesInNodes({

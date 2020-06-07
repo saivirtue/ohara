@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-import { deleteAllServices } from '../utils';
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import * as generate from '../../src/utils/generate';
+import { deleteAllServices } from '../utils';
 
 const prefix = Cypress.env('servicePrefix');
 
@@ -37,7 +39,7 @@ describe('DeleteWorkspace', () => {
     cy.findByText('Delete').click();
 
     cy.findAllByText('workspace1').should('not.exist');
-    cy.location().should(location => {
+    cy.location().should((location) => {
       expect(location.pathname).to.be.eq('/');
     });
   });
@@ -56,8 +58,8 @@ describe('DeleteWorkspace', () => {
 
     cy.findByText('Delete').click();
 
-    // wait a few seconds
-    cy.wait(5000);
+    // wait a few milliseconds
+    cy.wait(500);
 
     // simulate an incomplete deletion
     cy.reload();
@@ -72,7 +74,7 @@ describe('DeleteWorkspace', () => {
     cy.findByText('Delete').click();
 
     cy.findAllByText('workspace1').should('not.exist');
-    cy.location().should(location => {
+    cy.location().should((location) => {
       expect(location.pathname).to.be.eq('/');
     });
   });
@@ -96,7 +98,7 @@ describe('DeleteWorkspace', () => {
     cy.findByText('Delete').click();
 
     cy.findAllByText('workspace1').should('not.exist');
-    cy.location().should(location => {
+    cy.location().should((location) => {
       expect(location.pathname).to.be.eq(`/${workspaceName}`);
     });
   });

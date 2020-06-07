@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import { isEmpty, isUndefined } from 'lodash';
 
-import { API } from 'api/utils/apiUtils';
-import * as commonUtils from 'utils/common';
+import { API } from '../src/api/utils/apiUtils';
+import * as commonUtils from '../src/utils/common';
 import {
   SERVICE_STATE,
   ClusterResponse,
-} from 'api/apiInterface/clusterInterface';
-import { InspectServiceResponse } from 'api/apiInterface/inspectInterface';
-import { TopicResponse } from 'api/apiInterface/topicInterface';
-import { ObjectKey, BasicResponse } from '../apiInterface/basicInterface';
+} from '../src/api/apiInterface/clusterInterface';
+import { InspectServiceResponse } from '../src/api/apiInterface/inspectInterface';
+import { TopicResponse } from '../src/api/apiInterface/topicInterface';
+import {
+  ObjectKey,
+  BasicResponse,
+} from '../src/api/apiInterface/basicInterface';
 
 export const waitForRunning = (res: ClusterResponse) =>
   res.data.state === SERVICE_STATE.RUNNING;

@@ -18,14 +18,16 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 // eslint is complaining about `expect(thing).to.be.undefined`
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import * as generate from '../../src/utils/generate';
 import * as logApi from '../../src/api/logApi';
 import * as topicApi from '../../src/api/topicApi';
 import * as streamApi from '../../src/api/streamApi';
 import * as shabondiApi from '../../src/api/shabondiApi';
 import * as fileApi from '../../src/api/fileApi';
-import { createServicesInNodes, deleteAllServices } from '../utils';
 import { SOURCES } from '../../src/api/apiInterface/connectorInterface';
+import { createServicesInNodes, deleteAllServices } from '../utils';
 
 const file = {
   fixturePath: 'stream',

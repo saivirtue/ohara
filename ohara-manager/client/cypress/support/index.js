@@ -35,7 +35,7 @@
 import '@cypress/code-coverage/support';
 
 import './defaultCommands';
-import './e2eCommands';
+import './customCommands';
 import './retryOnFail';
 import { deleteAllServices } from '../utils';
 

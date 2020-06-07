@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-import { deleteAllServices } from '../utils';
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import { KIND } from '../../src/const';
 import * as generate from '../../src/utils/generate';
+import { deleteAllServices } from '../utils';
 
 describe('DevToolDialog - Topics tab', () => {
   beforeEach(async () => await deleteAllServices());

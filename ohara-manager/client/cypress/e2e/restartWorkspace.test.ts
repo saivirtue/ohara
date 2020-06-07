@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-import { deleteAllServices } from '../utils';
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import { hashByGroupAndName } from '../../src/utils/sha';
+import { deleteAllServices } from '../utils';
 
 describe('RestartWorkspace', () => {
   beforeEach(async () => await deleteAllServices());

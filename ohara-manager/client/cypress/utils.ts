@@ -15,6 +15,8 @@
  */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import { MODE } from '../src/const';
 import * as generate from '../src/utils/generate';
 import * as nodeApi from '../src/api/nodeApi';
@@ -29,13 +31,13 @@ import * as shabondiApi from '../src/api/shabondiApi';
 import * as pipelineApi from '../src/api/pipelineApi';
 import * as objectApi from '../src/api/objectApi';
 import * as inspectApi from '../src/api/inspectApi';
-import { wait } from '../src/api/utils/waitUtils';
+import { wait } from './waitUtils';
 import { API, RESOURCE } from '../src/api/utils/apiUtils';
 import {
   ObjectKey,
   BasicResponse,
 } from '../src/api/apiInterface/basicInterface';
-import { waitForRunning, waitForStopped } from '../src/api/utils/waitUtils';
+import { waitForRunning, waitForStopped } from './waitUtils';
 import {
   SettingDef,
   Type,

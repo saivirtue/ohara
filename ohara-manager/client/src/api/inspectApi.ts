@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import { omit } from 'lodash';
-import { RESOURCE, API } from 'api/utils/apiUtils';
+import { RESOURCE, API } from '../api/utils/apiUtils';
 import { ObjectKey } from './apiInterface/basicInterface';
 import * as inspect from './apiInterface/inspectInterface';
 import { FileRequest, FileResponse } from './apiInterface/fileInterface';
@@ -49,10 +51,10 @@ const fetchServiceInfo = (kind: INSPECT_KIND, objectKey?: ObjectKey) => {
       name: objectKey?.name,
       queryParams: { group: objectKey?.group },
     })
-    .then(res => {
+    .then((res) => {
       res.title = `Inspect ${kind} ${objectKey?.name} info successfully .`;
 
-      res.data.settingDefinitions.forEach(definition => {
+      res.data.settingDefinitions.forEach((definition) => {
         // The value `.` doesn't work very well with final form
         // We replace all "." by "__" in key and group field
         definition.key = definition.key.replace(/\./g, '__');
@@ -63,8 +65,8 @@ const fetchServiceInfo = (kind: INSPECT_KIND, objectKey?: ObjectKey) => {
           definition.internal = true;
         }
       });
-      res.data.classInfos.forEach(classInfo => {
-        classInfo.settingDefinitions.forEach(definition => {
+      res.data.classInfos.forEach((classInfo) => {
+        classInfo.settingDefinitions.forEach((definition) => {
           // The value `.` doesn't work very well with final form
           // We replace all "." by "__" in key and group field
           definition.key = definition.key.replace(/\./g, '__');
@@ -87,7 +89,7 @@ const fetchServiceInfo = (kind: INSPECT_KIND, objectKey?: ObjectKey) => {
 export const getConfiguratorInfo = () => {
   return inspectApi(INSPECT_KIND.configurator)
     .get<inspect.InspectConfiguratorResponse>()
-    .then(res => {
+    .then((res) => {
       res.title = `Inspect ${INSPECT_KIND.configurator} info successfully.`;
 
       return res;
@@ -104,7 +106,7 @@ export const getConfiguratorInfo = () => {
 export const getManagerInfo = () => {
   return inspectApi(INSPECT_KIND.manager)
     .get<inspect.InspectManagerResponse>()
-    .then(res => {
+    .then((res) => {
       res.title = `Inspect ${INSPECT_KIND.manager} info successfully.`;
 
       return res;
@@ -138,7 +140,7 @@ export const getShabondiInfo = (objectKey?: ObjectKey) => {
 export const getFileInfoWithoutUpload = (params: FileRequest) => {
   return inspectApi(INSPECT_KIND.file)
     .upload<FileResponse>({ params })
-    .then(res => {
+    .then((res) => {
       res.title = `Inspect ${INSPECT_KIND.file} "${params.name}" info successfully.`;
 
       return res;

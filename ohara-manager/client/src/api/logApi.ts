@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-import { RESOURCE, API } from 'api/utils/apiUtils';
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
+import { RESOURCE, API } from '../api/utils/apiUtils';
 import { ObjectKey } from './apiInterface/basicInterface';
 import { LogResponse, LOG_SERVICES } from './apiInterface/logInterface';
 
@@ -49,7 +51,7 @@ export const getWorkerLog = (objectKey: ObjectKey, queryParams?: object) => {
 
 export const getShabondiLog = (objectKey: ObjectKey, queryParams?: object) => {
   return fetchServiceLog(LOG_SERVICES.shabondi, objectKey, queryParams)
-    .then(res => {
+    .then((res) => {
       res.title = `Get ${RESOURCE.LOG}/${LOG_SERVICES.shabondi} "${objectKey.name}" info successfully.`;
       return res;
     })
@@ -61,7 +63,7 @@ export const getShabondiLog = (objectKey: ObjectKey, queryParams?: object) => {
 
 export const getStreamLog = (objectKey: ObjectKey, queryParams?: object) => {
   return fetchServiceLog(LOG_SERVICES.stream, objectKey, queryParams)
-    .then(res => {
+    .then((res) => {
       res.title = `Get ${RESOURCE.LOG}/${LOG_SERVICES.stream} "${objectKey.name}" info successfully.`;
       return res;
     })

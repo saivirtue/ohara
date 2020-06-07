@@ -18,11 +18,13 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 // eslint is complaining about `expect(thing).to.be.undefined`
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import { KIND, MODE } from '../../src/const';
 import * as generate from '../../src/utils/generate';
 import * as inspect from '../../src/api/inspectApi';
-import { createServicesInNodes, deleteAllServices } from '../utils';
 import { InspectServiceResponse } from '../../src/api/apiInterface/inspectInterface';
+import { createServicesInNodes, deleteAllServices } from '../utils';
 
 describe('Inspect API', () => {
   it('fetchConfiguratorInfo', async () => {

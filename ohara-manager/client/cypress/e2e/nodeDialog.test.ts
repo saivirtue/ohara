@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import { MODE } from '../../src/const';
 import * as inspectApi from '../../src/api/inspectApi';
-import { deleteAllServices } from '../utils';
 import * as generate from '../../src/utils/generate';
+import { deleteAllServices } from '../utils';
 
 let mode: MODE;
 const nodeHost = Cypress.env('nodeHost');
@@ -35,9 +37,7 @@ describe('NodeDialog of AppBar', () => {
   it('check node list initially', () => {
     cy.visit('/');
     cy.findByTestId('close-intro-button').click();
-    cy.findByTitle('Node list')
-      .should('exist')
-      .click();
+    cy.findByTitle('Node list').should('exist').click();
 
     if (mode === MODE.DOCKER) {
       // empty node list in DOCKER mode
@@ -56,9 +56,7 @@ describe('NodeDialog of AppBar', () => {
 
     cy.visit('/');
     cy.findByTestId('close-intro-button').click();
-    cy.findByTitle('Node list')
-      .should('exist')
-      .click();
+    cy.findByTitle('Node list').should('exist').click();
 
     const hostname = generate.serviceName();
     cy.findByTitle('Create Node').click();
@@ -92,14 +90,10 @@ describe('NodeDialog of AppBar', () => {
   it('filter nodes should be work', () => {
     cy.visit('/');
     cy.findByTestId('close-intro-button').click();
-    cy.findByTitle('Node list')
-      .should('exist')
-      .click();
+    cy.findByTitle('Node list').should('exist').click();
 
     if (mode === MODE.K8S) {
-      cy.findAllByPlaceholderText('Search')
-        .filter(':visible')
-        .type(nodeHost);
+      cy.findAllByPlaceholderText('Search').filter(':visible').type(nodeHost);
       cy.findByText(nodeHost).should('exist');
 
       cy.findAllByPlaceholderText('Search')
@@ -133,9 +127,7 @@ describe('NodeDialog of AppBar', () => {
     cy.findByText(hostname1).should('exist');
     cy.findByText(hostname2).should('exist');
 
-    cy.findAllByPlaceholderText('Search')
-      .filter(':visible')
-      .type(hostname2);
+    cy.findAllByPlaceholderText('Search').filter(':visible').type(hostname2);
 
     cy.findByText(hostname1).should('not.exist');
     cy.findByText(hostname2).should('exist');
@@ -152,9 +144,7 @@ describe('NodeDialog of AppBar', () => {
   it('add a actual node and create service should be worked', () => {
     cy.visit('/');
     cy.findByTestId('close-intro-button').click();
-    cy.findByTitle('Node list')
-      .should('exist')
-      .click();
+    cy.findByTitle('Node list').should('exist').click();
 
     if (mode === MODE.DOCKER) {
       // We only need to add node if was DOCKER mode
@@ -185,9 +175,7 @@ describe('NodeDialog of AppBar', () => {
     // wait for inspect worker
     cy.wait(15000);
 
-    cy.findByTitle('Node list')
-      .should('exist')
-      .click();
+    cy.findByTitle('Node list').should('exist').click();
 
     cy.findByTestId(`view-node-${nodeHost}`).click();
 
@@ -223,9 +211,7 @@ describe('NodeDialog of workspaceQuick', () => {
     }
     cy.visit('/');
     cy.findByTestId('close-intro-button').click();
-    cy.findByTitle('Node list')
-      .should('exist')
-      .click();
+    cy.findByTitle('Node list').should('exist').click();
 
     const hostname1 = generate.serviceName();
     cy.findByTitle('Create Node').click();
@@ -275,9 +261,7 @@ describe('NodeDialog of workspaceQuick', () => {
     cy.findByText(hostname3).should('exist');
 
     // filter by hostname
-    cy.findAllByPlaceholderText('Search')
-      .filter(':visible')
-      .type(hostname2);
+    cy.findAllByPlaceholderText('Search').filter(':visible').type(hostname2);
     cy.findByText(hostname1).should('not.exist');
     cy.findByText(hostname3).should('not.exist');
   });

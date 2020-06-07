@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-import { deleteAllServices } from '../utils';
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import * as generate from '../../src/utils/generate';
 import { hashByGroupAndName } from '../../src/utils/sha';
+import { deleteAllServices } from '../utils';
 
 const nodeHost = Cypress.env('nodeHost');
 
@@ -33,9 +35,7 @@ describe('Workspace Settings', () => {
     // click the topics button
     cy.findAllByText(/^topics in this workspace$/i).click({ force: true });
     // create topic
-    cy.findByTitle('Create Topic')
-      .should('be.enabled')
-      .click();
+    cy.findByTitle('Create Topic').should('be.enabled').click();
     cy.findAllByLabelText('Topic name', { exact: false })
       .filter(':visible')
       .type(sharedTopicName);
@@ -53,10 +53,7 @@ describe('Workspace Settings', () => {
     cy.contains('td', 'RUNNING').should('exist');
 
     // assert the topic view
-    cy.findAllByTitle('View topic')
-      .filter(':visible')
-      .first()
-      .click();
+    cy.findAllByTitle('View topic').filter(':visible').first().click();
     cy.contains('td', /^state$/i)
       .siblings('td')
       .contains('RUNNING')
@@ -191,9 +188,9 @@ describe('Workspace Settings', () => {
       .siblings('div')
       .first()
       .within(() => {
-        files.forEach(file => {
-          cy.get('input[type="file"]').then(element => {
-            cy.createJar(file).then(params => {
+        files.forEach((file) => {
+          cy.get('input[type="file"]').then((element) => {
+            cy.createJar(file).then((params) => {
               (element[0] as HTMLInputElement).files = params.fileList;
               cy.wrap(element).trigger('change', { force: true });
             });
@@ -203,9 +200,7 @@ describe('Workspace Settings', () => {
 
     // after upload file, click the upload file again
     cy.wait(1000);
-    cy.findAllByTitle('Upload File')
-      .first()
-      .click();
+    cy.findAllByTitle('Upload File').first().click();
 
     cy.findByText(source.name).should('exist');
     cy.findByText(sink.name).should('exist');
@@ -215,7 +210,7 @@ describe('Workspace Settings', () => {
     cy.findByText(source.name)
       .siblings('td')
       .last()
-      .within(el$ => {
+      .within((el$) => {
         el$.find('div[title="Delete file"]').click();
       });
     // confirm dialog
@@ -225,9 +220,7 @@ describe('Workspace Settings', () => {
     cy.findByText(source.name).should('not.exist');
 
     // //filter
-    cy.findAllByPlaceholderText('Search')
-      .filter(':visible')
-      .type(stream.name);
+    cy.findAllByPlaceholderText('Search').filter(':visible').type(stream.name);
     cy.findByText(stream.name).should('exist');
     cy.findByText(sink.name).should('not.exist');
 
@@ -235,7 +228,7 @@ describe('Workspace Settings', () => {
     cy.findByText(stream.name)
       .siblings('td')
       .last()
-      .within(el$ => {
+      .within((el$) => {
         el$.find('div[title="View file"]').click();
       });
     cy.findAllByText('DumbStream', { exact: false }).should('exist');

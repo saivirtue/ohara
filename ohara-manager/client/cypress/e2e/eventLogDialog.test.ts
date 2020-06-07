@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import { deleteAllServices } from '../utils';
 
 describe('EventLogDialog', () => {

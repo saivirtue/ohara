@@ -18,6 +18,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-console */
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import '@testing-library/cypress/add-commands';
 import { capitalize } from 'lodash';
 

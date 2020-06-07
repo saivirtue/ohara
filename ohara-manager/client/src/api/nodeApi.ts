@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import { omit } from 'lodash';
-import { RESOURCE, API } from 'api/utils/apiUtils';
+import { RESOURCE, API } from '../api/utils/apiUtils';
 import {
   NodeRequest,
   NodeResponse,

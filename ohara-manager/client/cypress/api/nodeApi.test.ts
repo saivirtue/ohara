@@ -18,10 +18,12 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 // eslint is complaining about `expect(thing).to.be.undefined`
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import * as generate from '../../src/utils/generate';
-import { deleteAllServices } from '../utils';
 import * as nodeApi from '../../src/api/nodeApi';
 import { NODE_STATE } from '../../src/api/apiInterface/nodeInterface';
+import { deleteAllServices } from '../utils';
 
 const generateNode = () => {
   const params = {
@@ -77,7 +79,7 @@ describe('Node API', () => {
 
     expect(tags).to.be.an('object');
 
-    services.forEach(service => {
+    services.forEach((service) => {
       expect(service.name).to.be.a('string');
       expect(service.clusterKeys).to.be.an('array');
     });
@@ -178,7 +180,7 @@ describe('Node API', () => {
 
     expect(result.data).to.be.an('array');
     const nodes = result.data.filter(
-      node =>
+      (node) =>
         node.hostname === paramsOne.hostname ||
         node.hostname === paramsTwo.hostname,
     );
@@ -193,7 +195,9 @@ describe('Node API', () => {
 
     const result = await nodeApi.getAll();
 
-    const nodes = result.data.filter(node => node.hostname === params.hostname);
+    const nodes = result.data.filter(
+      (node) => node.hostname === params.hostname,
+    );
 
     expect(nodes.length).to.eq(0);
   });

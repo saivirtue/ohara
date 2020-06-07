@@ -18,17 +18,19 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 // eslint is complaining about `expect(thing).to.be.undefined`
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import * as generate from '../../src/utils/generate';
 import * as topicApi from '../../src/api/topicApi';
 import * as shabondiApi from '../../src/api/shabondiApi';
 import * as inspectApi from '../../src/api/inspectApi';
+import { SERVICE_STATE } from '../../src/api/apiInterface/clusterInterface';
+import { SOURCES } from '../../src/api/apiInterface/connectorInterface';
 import {
   createServicesInNodes,
   deleteAllServices,
   assertSettingsByDefinitions,
 } from '../utils';
-import { SERVICE_STATE } from '../../src/api/apiInterface/clusterInterface';
-import { SOURCES } from '../../src/api/apiInterface/connectorInterface';
 
 const generateShabondi = async () => {
   const { node, broker } = await createServicesInNodes({

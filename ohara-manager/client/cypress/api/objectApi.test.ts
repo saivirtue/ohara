@@ -18,6 +18,8 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 // eslint is complaining about `expect(thing).to.be.undefined`
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import * as generate from '../../src/utils/generate';
 import * as objectApi from '../../src/api/objectApi';
 
@@ -114,7 +116,7 @@ describe('Object API', () => {
     const result = await objectApi.getAll();
 
     const objects = result.data.filter(
-      object =>
+      (object) =>
         (object.name === paramsOne.name && object.group === paramsOne.group) ||
         (object.name === paramsTwo.name && object.group === paramsTwo.group),
     );
@@ -130,7 +132,7 @@ describe('Object API', () => {
     const result = await objectApi.getAll();
 
     const objects = result.data.filter(
-      object => object.name === params.name && object.group === params.group,
+      (object) => object.name === params.name && object.group === params.group,
     );
 
     expect(objects.length).to.eq(0);

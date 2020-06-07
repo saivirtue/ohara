@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import { KIND, CELL_TYPES } from '../../src/const';
 import * as generate from '../../src/utils/generate';
-import { deleteAllServices } from '../utils';
 import { SOURCES, SINKS } from '../../src/api/apiInterface/connectorInterface';
+import { deleteAllServices } from '../utils';
 
 const ACTIONS = {
   link: 'link',

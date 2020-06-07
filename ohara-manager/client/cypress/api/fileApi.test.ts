@@ -18,6 +18,8 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 // eslint is complaining about `expect(thing).to.be.undefined`
 
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
 import { KIND } from '../../src/const';
 import * as generate from '../../src/utils/generate';
 import * as fileApi from '../../src/api/fileApi';
@@ -40,8 +42,8 @@ describe('File API', () => {
   it('uploadJar', () => {
     const file = generateFile();
     cy.createJar(file)
-      .then(params => fileApi.create(params))
-      .then(result => {
+      .then((params) => fileApi.create(params))
+      .then((result) => {
         const {
           group,
           name,
@@ -85,9 +87,9 @@ describe('File API', () => {
   it('fetchJars', () => {
     const file = generateFile();
     cy.createJar(file)
-      .then(params => fileApi.create(params))
+      .then((params) => fileApi.create(params))
       .then(() => {
-        fileApi.getAll({ group: file.group }).then(result => {
+        fileApi.getAll({ group: file.group }).then((result) => {
           expect(result.data).to.be.an('array');
           expect(result.data.length).to.eq(1);
 
@@ -103,9 +105,9 @@ describe('File API', () => {
   it('fetchJar', () => {
     const file = generateFile();
     cy.createJar(file)
-      .then(params => fileApi.create(params))
+      .then((params) => fileApi.create(params))
       .then(() => {
-        fileApi.get(file).then(result => {
+        fileApi.get(file).then((result) => {
           const {
             group,
             name,
@@ -152,9 +154,9 @@ describe('File API', () => {
     const newFile = Object.assign({}, file, { tags: { tag: 'aaa' } });
 
     cy.createJar(file)
-      .then(params => fileApi.create(params))
+      .then((params) => fileApi.create(params))
       .then(() => {
-        fileApi.update(newFile).then(result => {
+        fileApi.update(newFile).then((result) => {
           const { group, name, size, url, lastModified, tags } = result.data;
           expect(group).to.be.a('string');
           expect(group).to.eq(file.group);
@@ -179,10 +181,10 @@ describe('File API', () => {
   it('deleteJar', () => {
     const file = generateFile();
     cy.createJar(file)
-      .then(params => fileApi.create(params))
+      .then((params) => fileApi.create(params))
       .then(() => fileApi.remove(file))
       .then(() => fileApi.getAll())
-      .then(result => {
+      .then((result) => {
         expect(result.data.length).to.eq(0);
       });
   });

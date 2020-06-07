@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-import { RESOURCE, API } from 'api/utils/apiUtils';
+// Note: Do not change the usage of absolute path
+// unless you have a solution to resolve TypeScript + Coverage
+import { RESOURCE, API } from '../api/utils/apiUtils';
 import { ValidateResponse } from './apiInterface/validateInterface';
 import { ServiceBody } from './apiInterface/clusterInterface';
 
@@ -25,7 +27,7 @@ const validateApi = new API(`${RESOURCE.VALIDATE}/connector`);
 export const validateConnector = (params: ServiceBody) => {
   return validateApi
     .put<ValidateResponse>({ body: params })
-    .then(res => {
+    .then((res) => {
       res.title = `Validate connector "${params.name}" info successfully.`;
       return res;
     })
