@@ -33,7 +33,7 @@ class DumbStream extends Stream {
 
   override protected def customSettingDefinitions(): util.Map[String, SettingDef] =
     Map(
-      FILTER_VALUE_KEY -> SettingDef
+      FILTER_HEADER_KEY -> SettingDef
         .builder()
         .key(FILTER_HEADER_KEY)
         .displayName("header name to be filtered")
